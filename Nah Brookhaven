@@ -1,0 +1,9 @@
+local PLACE_ID_BROOKHAVEN = 4924922222
+
+if game.PlaceId == PLACE_ID_BROOKHAVEN then
+    loadstring(game:HttpGet(
+        "https://raw.githubusercontent.com/contadecomentar091-creator/Good-Scripts/refs/heads/main/Brookhaven%20Windui"
+    ))()
+else
+    game.Players.LocalPlayer:Kick("Jogo Errado, Tente Brookhaven")
+end
