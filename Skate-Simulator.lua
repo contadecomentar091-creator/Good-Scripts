@@ -1,17 +1,14 @@
--- === AUTO TELEPORT + REEXEC ===
+-- === AUTO TELEPORT (OBRIGATÓRIO) ===
 local TARGET_PLACE_ID = 76410430021937
-local SCRIPT_URL = "https://raw.githubusercontent.com/contadecomentar091-creator/Good-Scripts/refs/heads/main/Skate-Simulator.lua"
 
 local Players = game:GetService("Players")
 local TeleportService = game:GetService("TeleportService")
-local LocalPlayer = Players.LocalPlayer
+local LocalPlayer = Players.LocalPlayer or Players.PlayerAdded:Wait()
 
--- Se estiver no jogo errado, teleportar
 if game.PlaceId ~= TARGET_PLACE_ID then
     TeleportService:Teleport(TARGET_PLACE_ID, LocalPlayer)
     return
 end
-
 
 -- Carregar WindUI
 local WindUI = loadstring(game:HttpGet(
