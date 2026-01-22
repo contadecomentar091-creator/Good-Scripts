@@ -1,25 +1,14 @@
--- === CONFIG ===
+-- === AUTO TELEPORT + REEXEC ===
 local TARGET_PLACE_ID = 76410430021937
 local SCRIPT_URL = "https://raw.githubusercontent.com/contadecomentar091-creator/Good-Scripts/refs/heads/main/Skate-Simulator.lua"
 
--- === SERVICES ===
 local Players = game:GetService("Players")
 local TeleportService = game:GetService("TeleportService")
 local LocalPlayer = Players.LocalPlayer
 
--- === AUTO TELEPORT ===
+-- Se estiver no jogo errado, teleportar
 if game.PlaceId ~= TARGET_PLACE_ID then
-    getgenv().ManoHub_ReExecute = true
     TeleportService:Teleport(TARGET_PLACE_ID, LocalPlayer)
-    return
-end
-
--- === REEXECUTA APÓS TELEPORT ===
-if getgenv().ManoHub_ReExecute then
-    getgenv().ManoHub_ReExecute = nil
-    task.delay(2, function()
-        loadstring(game:HttpGet(SCRIPT_URL))()
-    end)
     return
 end
 
