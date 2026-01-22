@@ -1,15 +1,3 @@
--- === AUTO TELEPORT (OBRIGATÓRIO) ===
-local TARGET_PLACE_ID = 76410430021937
-
-local Players = game:GetService("Players")
-local TeleportService = game:GetService("TeleportService")
-local LocalPlayer = Players.LocalPlayer or Players.PlayerAdded:Wait()
-
-if game.PlaceId ~= TARGET_PLACE_ID then
-    TeleportService:Teleport(TARGET_PLACE_ID, LocalPlayer)
-    return
-end
-
 -- Carregar WindUI
 local WindUI = loadstring(game:HttpGet(
     "https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"
