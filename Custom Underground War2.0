@@ -653,4 +653,89 @@ if game.PlaceId == 9791603388 and CanStart.UnderGroundWar == 'true' then
         end,
     }
 
-    AddB
+    AddButton(v111, v125)
+    AddSection(v111, {
+        Name = 'Change Team',
+    })
+
+    local v127 = {
+        Name = 'Change Team',
+        Callback = function()
+            local _Team4 = game.Players.LocalPlayer.Team
+
+            if _Team4 then
+                _Team4 = game.Players.LocalPlayer.Team.Name
+            end
+            if _Team4 == 'Red' then
+                u26('Blue')
+            elseif _Team4 == 'Blue' then
+                u26('Red')
+            end
+        end,
+    }
+
+    AddButton(v111, v127)
+    AddSection(v112, {
+        Name = 'ESPs',
+    })
+
+    local v129 = {
+        Name = 'Players ESP',
+        Default = false,
+        Callback = function(p128)
+            getgenv().PlayerESP = p128
+
+            u90()
+        end,
+    }
+
+    AddToggle(v112, v129)
+
+    local v131 = {
+        Name = 'Flags ESP',
+        Default = false,
+        Callback = function(p130)
+            if p130 then
+                u98()
+            else
+                u105()
+            end
+        end,
+    }
+
+    AddToggle(v112, v131)
+    AddSection(v113, {
+        Name = 'AutoFarm Settings',
+    })
+    AddToggle(v113, {
+        Name = 'AutoClick',
+        Default = true,
+        Callback = function(p132)
+            getgenv().AutoClick = p132
+        end,
+    })
+    AddToggle(v113, {
+        Name = 'AutoChange Place',
+        Default = true,
+        Callback = function(p133)
+            getgenv().AutoChangePlace = p133
+        end,
+    })
+    AddButton(v109, {
+        Name = 'Hitbox',
+        Callback = function()
+            loadstring(game:HttpGet("https://rawscripts.net/raw/Underground-War-2.0-NUKE-Mano-Hub-114284"))()
+        end,
+    })
+    local v135 = {
+        Name = 'AutoChange Team',
+        Default = false,
+        Callback = function(p134)
+            getgenv().AutoChangeTeam = p134
+
+            u107()
+        end,
+    }
+
+    AddToggle(v113, v135)
+end
