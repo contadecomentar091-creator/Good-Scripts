@@ -1,0 +1,656 @@
+-- ts file was generated at discord.gg/25ms
+
+CanStart = loadstring(game:HttpGet('https://raw.githubusercontent.com/Darkmoonxhubscript/ScriptState/main/StateOfScripts'))()
+
+if game.PlaceId == 9791603388 and CanStart.UnderGroundWar == 'true' then
+    local _VirtualUser = game:GetService('VirtualUser')
+    local _Players = game:GetService('Players')
+    local _LocalPlayer = _Players.LocalPlayer
+    local _ = _LocalPlayer.Character
+
+    getgenv().AutoClick = true
+    getgenv().AutoFarmTeam = 'none'
+    getgenv().AutoChangePlace = true
+    getgenv().AutoChangeTeam = true
+    getgenv().AutoFarmAllPlayerDied = false
+    getgenv().AutoFarmAlreadyInBase = false
+    getgenv().AutoFarmTime = 0.001
+    getgenv().AutoFarm = false
+    getgenv().SilentAimTime = 0.554
+    getgenv().AutoMineTpTime = 0.001
+    getgenv().AutoMine = false
+    getgenv().PlayerESP = false
+
+    (function()
+        local _Team = game.Players.LocalPlayer.Team
+
+        if _Team then
+            _Team = game.Players.LocalPlayer.Team.Name
+        end
+        if _Team == 'Red' then
+            getgenv().AutoFarmTeam = 'Blue'
+        elseif _Team == 'Blue' then
+            getgenv().AutoFarmTeam = 'Red'
+        end
+    end)()
+
+    local function u8(p5, p6, p7)
+        _LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(p5, p6, p7)
+    end
+
+    function EquipWeapon(p9)
+        local _LocalPlayer2 = game.Players.LocalPlayer
+        local _Backpack = _LocalPlayer2:FindFirstChild('Backpack')
+        local v12 = _LocalPlayer2.Character or _LocalPlayer2.CharacterAdded:Wait()
+
+        if p9 == 'Nada' then
+            local v13, v14, v15 = ipairs(v12:GetChildren())
+
+            while true do
+                local v16
+
+                v15, v16 = v13(v14, v15)
+
+                if v15 == nil then
+                    break
+                end
+                if v16:IsA('Tool') then
+                    v16.Parent = _Backpack
+                end
+            end
+        else
+            local v17 = _Backpack:FindFirstChild(p9)
+
+            if v17 and v17:IsA('Tool') then
+                local v18, v19, v20 = ipairs(v12:GetChildren())
+
+                while true do
+                    local v21
+
+                    v20, v21 = v18(v19, v20)
+
+                    if v20 == nil then
+                        break
+                    end
+                    if v21:IsA('Tool') then
+                        v21.Parent = _Backpack
+
+                        break
+                    end
+                end
+
+                v17.Parent = v12
+            end
+        end
+    end
+
+    local function u23()
+        local _Team2 = game.Players.LocalPlayer.Team
+
+        if _Team2 then
+            _Team2 = game.Players.LocalPlayer.Team.Name
+        end
+        if _Team2 == 'Blue' then
+            Teleporte(55, 3, 223)
+            task.wait(1)
+            Teleporte(6, -21, 6)
+            task.wait(10)
+            Teleporte(-7, 17, 75)
+            task.wait(0.001)
+            Teleporte(6, -21, 6)
+            task.wait(10)
+            Teleporte(85, 3, -237)
+            task.wait(1)
+            Teleporte(6, -21, 6)
+            task.wait(10)
+            Teleporte(8, 17, -76)
+            task.wait(0.1)
+            Teleporte(6, -21, 6)
+        elseif _Team2 == 'Red' then
+            Teleporte(85, 3, -237)
+            task.wait(1)
+            Teleporte(6, -21, 6)
+            task.wait(10)
+            Teleporte(8, 17, -76)
+            task.wait(0.001)
+            Teleporte(6, -21, 6)
+            task.wait(10)
+            Teleporte(55, 3, 223)
+            task.wait(1)
+            Teleporte(6, -21, 6)
+            task.wait(10)
+            Teleporte(-7, 17, 75)
+            task.wait(0.1)
+            Teleporte(6, -21, 6)
+        end
+    end
+    local function u24()
+        if getgenv().AutoClick then
+            _VirtualUser:CaptureController()
+            _VirtualUser:ClickButton1(Vector2.new(20, 30))
+        end
+    end
+    local function u26(p25)
+        game:GetService('ReplicatedStorage').Events.Remote.PlayPressed:InvokeServer(unpack({p25}))
+    end
+    local function u47()
+        if getgenv().AutoFarmTeam ~= 'Red' then
+            if getgenv().AutoFarmTeam == 'Blue' then
+                u8(85, 3, -237)
+            end
+        else
+            u8(55, 3, 22)
+        end
+
+        task.wait(1)
+
+        while getgenv().AutoFarm do
+            task.wait(getgenv().AutoFarmTime)
+
+            local v45, v46 = pcall(function()
+                local v27 = game:GetService('Teams'):FindFirstChild(getgenv().AutoFarmTeam)
+
+                u24()
+
+                getgenv().AutoFarmAllPlayerDied = true
+
+                local v28, v29, v30 = pairs(v27:GetPlayers())
+
+                while true do
+                    local v31
+
+                    v30, v31 = v28(v29, v30)
+
+                    if v30 == nil then
+                        break
+                    end
+
+                    local _Character = v31.Character
+
+                    if _Character then
+                        _Character = v31.Character:FindFirstChildOfClass('Humanoid')
+                    end
+                    if _Character and _Character.Health > 0 and (v31.Character:FindFirstChildOfClass('ForceField') == nil and (v31.Name ~= 'lendario2347' and (v31.Name ~= 'D4rkMoonHub' and (v31.Name ~= 'DarkMoonHubb' and v31.Name ~= 'DarkMoonHub')))) then
+                        getgenv().AutoFarmAllPlayerDied = false
+
+                        EquipWeapon('Sword')
+
+                        break
+                    end
+                end
+
+                if getgenv().AutoFarmAllPlayerDied then
+                    local v33 = math.random(1, 2)
+
+                    if getgenv().AutoFarmTeam ~= 'Red' or getgenv().AutoMine then
+                        if getgenv().AutoFarmTeam == 'Blue' and not getgenv().AutoMine then
+                            u8(-55, 3, -223)
+
+                            if getgenv().AutoChangePlace then
+                                task.wait(0.3)
+
+                                if v33 == 1 then
+                                    u8(-28, 72, -56)
+                                else
+                                    u8(69, 66, -36)
+                                end
+                            end
+                        end
+                    else
+                        u8(53, 3, 223)
+
+                        if getgenv().AutoChangePlace then
+                            task.wait(0.3)
+
+                            if v33 == 1 then
+                                u8(31, 72, 56)
+                            else
+                                u8(-67, 66, 34)
+                            end
+                        end
+                    end
+                else
+                    local _huge = math.huge
+                    local v35, v36, v37 = pairs(v27:GetPlayers())
+                    local v38 = nil
+
+                    while true do
+                        local v39
+
+                        v37, v39 = v35(v36, v37)
+
+                        if v37 == nil then
+                            break
+                        end
+
+                        local _Character2 = v39.Character
+
+                        if _Character2 then
+                            _Character2 = v39.Character:FindFirstChildOfClass('Humanoid')
+                        end
+                        if _Character2 and _Character2.Health > 0 and v39.Character:FindFirstChildOfClass('ForceField') == nil then
+                            local _Magnitude = (v39.Character.HumanoidRootPart.Position - game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude
+
+                            if _Magnitude < _huge then
+                                v38 = v39
+                                _huge = _Magnitude
+                            end
+                        end
+                    end
+
+                    if v38 then
+                        local v42 = v38.Character.HumanoidRootPart.Position - Vector3.new(0, 8, 0)
+                        local _Y = (v42 - game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Unit.Y
+                        local v44 = v42 + (_Y > 0.5 and 0.5 or (_Y < -0.5 and -0.5 or _Y)) * Vector3.new(0, 0, 5)
+
+                        game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(v44)
+                    end
+                end
+            end)
+
+            if not v45 then
+                warn('Error in AutoFarm: ' .. tostring(v46))
+            end
+        end
+    end
+    local function u53()
+        local _Dirts = game.workspace:FindFirstChild('Dirts')
+
+        while true do
+            if not getgenv().AutoMine then
+                return
+            end
+            if _Dirts and (not getgenv().AutoFarm or getgenv().AutoFarm and getgenv().AutoFarmAllPlayerDied) then
+                EquipWeapon('Shovel')
+
+                local v49, v50, v51 = ipairs(_Dirts:GetDescendants())
+
+                while true do
+                    local v52
+
+                    v51, v52 = v49(v50, v51)
+
+                    if v51 == nil then
+                        break
+                    end
+                    if v52:IsA('BasePart') and v52.Name == 'Dirt' then
+                        (game.Players.LocalPlayer.Character or game.Players.LocalPlayer.CharacterAdded:Wait()):WaitForChild('HumanoidRootPart').CFrame = CFrame.new(v52.Position)
+
+                        break
+                    end
+                end
+            end
+
+            task.wait(getgenv().AutoMineTpTime)
+        end
+    end
+    local function u56(p54, p55)
+        return p54 + p55 * getgenv().SilentAimTime
+    end
+    local function u65()
+        local _huge2 = math.huge
+        local _Position = game.Players.LocalPlayer.Character.HumanoidRootPart.Position
+        local v59, v60, v61 = pairs(game.Players:GetPlayers())
+        local v62 = nil
+
+        while true do
+            local v63
+
+            v61, v63 = v59(v60, v61)
+
+            if v61 == nil then
+                break
+            end
+            if v63.Team ~= game.Players.LocalPlayer.Team and v63.Character and (v63.Character:FindFirstChild('HumanoidRootPart') and v63.Character.Humanoid.Health > 0) then
+                local _magnitude = (_Position - v63.Character.HumanoidRootPart.Position).magnitude
+
+                if _magnitude < _huge2 then
+                    v62 = v63
+                    _huge2 = _magnitude
+                end
+            end
+        end
+
+        return v62
+    end
+    local function u74(p66)
+        local _Y2 = p66.Y
+        local _Y3 = game.Players.LocalPlayer.Character.HumanoidRootPart.Position.Y
+
+        if math.abs(_Y2 - _Y3) <= 2 then
+            return true
+        end
+
+        local v69, v70, v71 = pairs(game.Players:GetPlayers())
+
+        while true do
+            local v72
+
+            v71, v72 = v69(v70, v71)
+
+            if v71 == nil then
+                break
+            end
+            if v72.Team ~= game.Players.LocalPlayer.Team and v72.Character and v72.Character:FindFirstChild('HumanoidRootPart') then
+                local _Y4 = v72.Character.HumanoidRootPart.Position.Y
+
+                if math.abs(_Y3 - _Y4) <= 2 then
+                    return v72
+                end
+            end
+        end
+
+        return u65()
+    end
+    local function u76(p75)
+        EquipWeapon('Sniper')
+        game:GetService('ReplicatedStorage').Events.Remote.ShotTarget:FireServer(unpack({
+            p75,
+            'Sniper',
+        }))
+    end
+    local function u81()
+        local v77 = u65()
+
+        if v77 then
+            local _Position2 = v77.Character.HumanoidRootPart.Position
+            local _Velocity = v77.Character.HumanoidRootPart.Velocity
+
+            if _Velocity.magnitude <= 0 then
+                u76(_Position2)
+            else
+                local v80 = u56(_Position2, _Velocity)
+
+                if u74(v80) ~= true then
+                    u76(_Position2)
+                else
+                    u76(v80)
+                end
+            end
+        end
+    end
+    local function u90()
+        while getgenv().PlayerESP do
+            task.wait(1)
+
+            local v82 = _Players
+            local v83, v84, v85 = ipairs(v82:GetPlayers())
+
+            while true do
+                local v86
+
+                v85, v86 = v83(v84, v85)
+
+                if v85 == nil then
+                    break
+                end
+                if v86.Character then
+                    local _Character3 = v86.Character
+
+                    if getgenv().PlayerESP then
+                        if not _Character3:FindFirstChildOfClass('Highlight') then
+                            local _Highlight = Instance.new('Highlight')
+
+                            if v86.Team then
+                                _Highlight.FillColor = v86.Team.TeamColor.Color
+                            else
+                                _Highlight.FillColor = Color3.new(255, 255, 255)
+                            end
+
+                            _Highlight.Adornee = _Character3
+                            _Highlight.OutlineColor = Color3.new(0, 0, 0)
+                            _Highlight.FillTransparency = 0.3
+                            _Highlight.OutlineTransparency = 1
+                            _Highlight.Enabled = true
+                            _Highlight.Parent = _Character3
+                        end
+                    else
+                        local _Highlight2 = _Character3:FindFirstChildOfClass('Highlight')
+
+                        if _Highlight2 then
+                            _Highlight2:Destroy()
+                        end
+                    end
+                end
+            end
+        end
+    end
+
+    local _Workspace = game:GetService('Workspace')
+
+    local function u98()
+        local v92 = _Workspace
+        local v93, v94, v95 = ipairs(v92:GetDescendants())
+
+        while true do
+            local v96
+
+            v95, v96 = v93(v94, v95)
+
+            if v95 == nil then
+                break
+            end
+            if v96:IsA('Model') and v96.Name == 'Flag' then
+                local _Highlight3 = Instance.new('Highlight')
+
+                _Highlight3.Adornee = v96
+                _Highlight3.FillColor = Color3.fromRGB(0, 255, 0)
+                _Highlight3.OutlineColor = Color3.fromRGB(0, 0, 0)
+                _Highlight3.FillTransparency = 0.7
+                _Highlight3.OutlineTransparency = 1
+                _Highlight3.Parent = v96
+            end
+        end
+    end
+    local function u105()
+        local v99 = _Workspace
+        local v100, v101, v102 = ipairs(v99:GetDescendants())
+
+        while true do
+            local v103
+
+            v102, v103 = v100(v101, v102)
+
+            if v102 == nil then
+                break
+            end
+            if v103:IsA('BasePart') or v103:IsA('Model') and v103.Name == 'Flag' then
+                local _Highlight4 = v103:FindFirstChild('Highlight')
+
+                if _Highlight4 then
+                    _Highlight4:Destroy()
+                end
+            end
+        end
+    end
+    local function u107()
+        while getgenv().AutoChangeTeam do
+            task.wait(0.15)
+
+            local _Team3 = game.Players.LocalPlayer.Team
+
+            if _Team3 then
+                _Team3 = game.Players.LocalPlayer.Team.Name
+            end
+            if _Team3 == 'Blue' then
+                getgenv().AutoFarmTeam = 'Red'
+            elseif _Team3 == 'Red' then
+                getgenv().AutoFarmTeam = 'Blue'
+            else
+                getgenv().AutoFarmTeam = 'None'
+            end
+            if _LocalPlayer.PlayerGui.Hud.Left.Mini.ChangeTeam.Free.Visible then
+                game:GetService('ReplicatedStorage').Events.Remote.ChangeTeam:FireServer()
+            end
+        end
+    end
+
+    loadstring(game:HttpGet('https://raw.githubusercontent.com/Darkmoonxhubscript/DarkLibV2/refs/heads/main/Source.luau'))()
+    MakeWindow({
+        Title = 'DarkMoonHub : Underground War 2.0',
+    })
+    AddMinimizeButton({
+        Icon = GetIcon('moon'),
+    })
+    NewNotify({
+        Title = 'DarkMoonHub',
+        Description = 'Script Loaded!',
+        Time = 5,
+    })
+
+    local v108 = NewTab({
+        Name = 'Discord',
+        Icon = 'info',
+    })
+    local v109 = NewTab({
+        Name = 'Main',
+        Icon = 'home',
+    })
+    local v110 = NewTab({
+        Name = 'PvP',
+        Icon = 'swords',
+    })
+    local v111 = NewTab({
+        Name = 'Teams',
+        Icon = 'flag',
+    })
+    local v112 = NewTab({
+        Name = 'ESPs',
+        Icon = 'eye',
+    })
+    local v113 = NewTab({
+        Name = 'Settings',
+        Icon = 'Settings',
+    })
+
+    AddSection(v108, {
+        Name = 'Server Invite',
+    })
+    AddDiscordInvite(v108, {
+        Name = 'DarkMoonHub',
+        Description = 'Join Our Discord Community!',
+        Logo = GetIcon('moon'),
+        Invite = 'https://discord.gg/YDXM43cBU6',
+    })
+    AddSection(v109, {
+        Name = 'Main',
+    })
+    AddSlider(v109, {
+        Name = 'AutoFarm Speed',
+        Min = 0.001,
+        Max = 1,
+        Increase = 0.001,
+        Default = 0.001,
+        Callback = function(p114)
+            getgenv().AutoFarmTime = p114
+        end,
+    })
+
+    local v116 = {
+        Name = 'AutoFarm',
+        Default = false,
+        Callback = function(p115)
+            getgenv().AutoFarm = p115
+
+            u47()
+        end,
+    }
+
+    AddToggle(v109, v116)
+    AddSection(v109, {
+        Name = 'AutoMine',
+    })
+    AddSlider(v109, {
+        Name = 'AutoMine Speed',
+        Min = 0.001,
+        Max = 1,
+        Increase = 0.001,
+        Default = 0.001,
+        Callback = function(p117)
+            getgenv().AutoMineTpTime = p117
+        end,
+    })
+
+    local v119 = {
+        Name = 'AutoMine',
+        Default = false,
+        Callback = function(p118)
+            getgenv().AutoMine = p118
+
+            u53()
+        end,
+    }
+
+    AddToggle(v109, v119)
+    AddSection(v110, {
+        Name = 'Silent Aim (AimBot)',
+    })
+    AddSlider(v110, {
+        Name = 'SilentAim Predict Time',
+        Min = 0.001,
+        Max = 1,
+        Increase = 0.001,
+        Default = 0.554,
+        Callback = function(p120)
+            getgenv().SilentAimTime = p120
+        end,
+    })
+
+    local v124 = {
+        Name = 'Silent Aim',
+        Callback = function()
+            local _ScreenGui = Instance.new('ScreenGui')
+            local _TextButton = Instance.new('TextButton')
+            local _UICorner = Instance.new('UICorner')
+
+            _ScreenGui.Name = 'SilentAim | Why You Using DEX?'
+            _ScreenGui.Parent = game.CoreGui
+            _ScreenGui.ResetOnSpawn = false
+            _TextButton.Parent = _ScreenGui
+            _TextButton.Name = 'SilentAimButton'
+            _TextButton.Size = UDim2.new(0, 200, 0, 50)
+            _TextButton.Position = UDim2.new(0.5, -100, 0.5, -25)
+            _TextButton.Text = 'Shoot Nearest Player'
+            _TextButton.TextScaled = true
+            _TextButton.Font = Enum.Font.FredokaOne
+            _TextButton.BackgroundColor3 = Color3.fromRGB(32, 32, 32)
+            _TextButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+            _TextButton.Draggable = true
+            _TextButton.Active = true
+            _UICorner.Parent = _TextButton
+            _UICorner.CornerRadius = UDim.new(0, 12)
+
+            _TextButton.MouseButton1Click:Connect(function()
+                u81()
+            end)
+        end,
+    }
+
+    AddButton(v110, v124)
+    AddSection(v110, {
+        Name = 'PvP Menus',
+    })
+    AddButton(v110, {
+        Name = 'Fly Gui',
+        Callback = function()
+            loadstring(game:HttpGet('https://pastebin.com/raw/YmQsijSc'))()
+        end,
+    })
+    AddButton(v110, {
+        Name = 'PvP Menu (USE IN AUTOFARM FOR IT WORKS)',
+        Callback = function()
+            loadstring(game:HttpGet('https://pastebin.com/raw/h0KcRFBm'))()
+        end,
+    })
+    AddSection(v111, {
+        Name = 'Capture Team Flag',
+    })
+
+    local v125 = {
+        Name = 'Capture Enemy Flag',
+        Callback = function()
+            u23()
+        end,
+    }
+
+    AddB
