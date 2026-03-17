@@ -1,0 +1,254 @@
+-- open source :P
+
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Players = game:GetService("Players")
+
+local LocalPlayer = Players.LocalPlayer
+
+-- GUI
+local gui = Instance.new("ScreenGui")
+gui.Parent = game.CoreGui
+
+local button = Instance.new("TextButton")
+button.Size = UDim2.new(0,140,0,40)
+button.Position = UDim2.new(0,200,0,200)
+button.Text = "BlackFlash : OFF"
+button.BackgroundColor3 = Color3.fromRGB(30,30,30)
+button.TextColor3 = Color3.new(1,1,1)
+button.Parent = gui
+
+-- DRAG
+local dragging = false
+local dragStart
+local startPos
+
+button.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 
+    or input.UserInputType == Enum.UserInputType.Touch then
+
+        dragging = true
+        dragStart = input.Position
+        startPos = button.Position
+
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                dragging = false
+            end
+        end)
+    end
+end)
+
+button.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement
+    or input.UserInputType == Enum.UserInputType.Touch then
+
+        if dragging then
+            local delta = input.Position - dragStart
+
+            button.Position = UDim2.new(
+                startPos.X.Scale,
+                startPos.X.Offset + delta.X,
+                startPos.Y.Scale,
+                startPos.Y.Offset + delta.Y
+            )
+        end
+    end
+end)
+
+-- TOGGLE
+local Enabled = false
+
+button.MouseButton1Click:Connect(function()
+
+    Enabled = not Enabled
+
+    if Enabled then
+        button.Text = "BlackFlash : ON"
+    else
+        button.Text = "BlackFlash : OFF"
+    end
+
+end)
+
+-- CONFIG
+local CONFIG = {
+    BehindOffset    = 6.5,  
+    AlreadyBehindTolerance = 3.5,
+    FireDelay       = 0.31, 
+    WarpDelay       = 0.1,
+    BackPartLifetime = 1.0, 
+}
+
+-- UTILS
+local function getHRP()
+    local char = LocalPlayer.Character
+    return char and char:FindFirstChild("HumanoidRootPart")
+end
+
+local function isAliveModel(model, exceptChar)
+    if model == exceptChar then return false end
+    local root     = model:FindFirstChild("HumanoidRootPart")
+    local humanoid = model:FindFirstChild("Humanoid")
+    return root and humanoid and humanoid.Health > 0
+end
+
+-- REMOTE
+local function getDivergentFistRemote()
+    local ok, remote = pcall(function()
+        return ReplicatedStorage
+            :WaitForChild("Knit",5)
+            :WaitForChild("Knit",5)
+            :WaitForChild("Services",5)
+            :WaitForChild("DivergentFistService",5)
+            :WaitForChild("RE",5)
+            :WaitForChild("Activated",5)
+    end)
+    return ok and remote or nil
+end
+
+local targetRemote = getDivergentFistRemote()
+
+if not targetRemote then
+    warn("Remote not found")
+    return
+end
+
+-- TARGET FINDER
+local function findNearestTarget()
+
+    local hrp = getHRP()
+    if not hrp then return nil end
+
+    local myChar = LocalPlayer.Character
+    local nearest = nil
+    local bestDist = math.huge
+
+    local function checkModel(model)
+
+        if not isAliveModel(model,myChar) then return end
+
+        local root = model:FindFirstChild("HumanoidRootPart")
+        local dist = (hrp.Position - root.Position).Magnitude
+
+        if dist < bestDist then
+            bestDist = dist
+            nearest = model
+        end
+
+    end
+
+    for _,player in ipairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer and player.Character then
+            checkModel(player.Character)
+        end
+    end
+
+    for _,obj in ipairs(workspace:GetDescendants()) do
+        if obj:IsA("Model") then
+            checkModel(obj)
+        end
+    end
+
+    return nearest
+
+end
+
+-- WARP
+local function warpBehindTarget(targetRoot)
+
+    local hrp = getHRP()
+    if not hrp then return end
+
+    local backPos = (targetRoot.CFrame * CFrame.new(0,0,CONFIG.BehindOffset)).Position
+
+    hrp.CFrame = CFrame.lookAt(backPos,targetRoot.Position)
+
+end
+-- virar pra as costas do enemy
+local RunService = game:GetService("RunService")
+
+local function faceTargetForTime(targetRoot, duration)
+
+    local char = LocalPlayer.Character
+    if not char then return end
+
+    local hrp = char:FindFirstChild("HumanoidRootPart")
+    local hum = char:FindFirstChildOfClass("Humanoid")
+
+    if not hrp or not hum or not targetRoot then return end
+
+    hum.AutoRotate = false
+
+    local start = tick()
+    local conn
+
+    conn = RunService.RenderStepped:Connect(function()
+
+        if tick() - start > duration then
+            hum.AutoRotate = true
+            conn:Disconnect()
+            return
+        end
+
+        local myPos = hrp.Position
+        local enemyPos = targetRoot.Position
+
+        hrp.CFrame = CFrame.new(
+            myPos,
+            Vector3.new(enemyPos.X, myPos.Y, enemyPos.Z)
+        )
+
+    end)
+
+end
+
+-- HOOK
+local isCooling = false
+
+local oldNamecall
+oldNamecall = hookmetamethod(game,"__namecall",function(self,...)
+
+    if getnamecallmethod() ~= "FireServer" or self ~= targetRemote then
+        return oldNamecall(self,...)
+    end
+
+    if not Enabled then
+        return oldNamecall(self,...)
+    end
+
+    if isCooling then
+        return oldNamecall(self,...)
+    end
+
+    isCooling = true
+
+    local args = {...}
+    local result = oldNamecall(self,...)
+
+    task.delay(CONFIG.FireDelay,function()
+
+        pcall(function()
+            targetRemote:FireServer(table.unpack(args))
+        end)
+
+        isCooling = false
+
+    end)
+
+    task.delay(CONFIG.WarpDelay,function()
+
+        local target = findNearestTarget()
+        if not target then return end
+
+        local targetRoot = target:FindFirstChild("HumanoidRootPart")
+        if not targetRoot then return end
+        faceTargetForTime(targetRoot,0.37)
+        warpBehindTarget(targetRoot)
+
+    end)
+
+    return result
+
+end)
+
+print("Black Flash GUI Loaded")
