@@ -1,21 +1,17 @@
 --[[
- Lock On Mobile - HUD estilo console (FINAL FIX)
- - FUNCIONA EM DUMMY
- - NUNCA TRAVA EM VOCÊ
- - IGNORA NPC DA ULT DO TODO
- - IGNORA MESMO TIME
- - HUD leve
+ Lock On Mobile - HUD estilo console (FINAL + DRAG)
 ]]
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
 local Camera = workspace.CurrentCamera
 
 local LP = Players.LocalPlayer
 repeat task.wait() until LP.Character
 
 -- ================= CONFIG =================
-local LOCK_RANGE = 999999
+local LOCK_RANGE = 120
 local CAMERA_DISTANCE = 13
 local CAMERA_HEIGHT = 3.5
 local SMOOTHNESS = 0.18
@@ -43,18 +39,12 @@ local function isDummy(model)
     return name:find("dummy") or name:find("training")
 end
 
--- Ignora NPC bugado da ult do Todo
 local function isTodoUltNPC(model)
-    if not HRP then return true end
-    if model == Char then return true end -- 🔒 BLOQUEIA VOCÊ MESMO
+    if not HRP then return false end
+    if model == Char then return true
 
-    if isDummy(model) then
-        return false -- dummy normal é permitido
-    end
-
-    if Players:GetPlayerFromCharacter(model) then
-        return false -- player normal permitido
-    end
+    if isDummy(model) then return false end
+    if Players:GetPlayerFromCharacter(model) then return false end
 
     local hum = model:FindFirstChildOfClass("Humanoid")
     local hrp = model:FindFirstChild("HumanoidRootPart")
@@ -80,7 +70,7 @@ local function getClosestTarget()
 
     for _, m in ipairs(workspace:GetDescendants()) do
         if m:IsA("Model")
-        and m ~= Char -- 🔒 GARANTIA EXTRA
+        and m ~= Char
         and not isTodoUltNPC(m)
         and not isSameTeam(m) then
 
@@ -143,6 +133,62 @@ distLabel.BackgroundTransparency = 1
 distLabel.TextColor3 = Color3.fromRGB(255,255,255)
 distLabel.TextScaled = true
 
+-- ================= BOTÃO =================
+local btn = Instance.new("TextButton", gui)
+btn.Size = UDim2.new(0,120,0,40)
+btn.Position = UDim2.new(0.75,0,0.85,0)
+btn.Text = "LOCK OFF"
+btn.TextScaled = true
+btn.BackgroundColor3 = Color3.fromRGB(30,30,30)
+btn.BackgroundTransparency = 0.7
+btn.TextColor3 = Color3.fromRGB(255,255,255)
+Instance.new("UICorner", btn).CornerRadius = UDim.new(0,10)
+
+-- ================= DRAG (MOBILE + PC) =================
+local dragging = false
+local dragInput
+local dragStart
+local startPos
+
+local function update(input)
+    local delta = input.Position - dragStart
+    btn.Position = UDim2.new(
+        startPos.X.Scale,
+        startPos.X.Offset + delta.X,
+        startPos.Y.Scale,
+        startPos.Y.Offset + delta.Y
+    )
+end
+
+btn.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1
+    or input.UserInputType == Enum.UserInputType.Touch then
+
+        dragging = true
+        dragStart = input.Position
+        startPos = btn.Position
+
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                dragging = false
+            end
+        end)
+    end
+end)
+
+btn.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement
+    or input.UserInputType == Enum.UserInputType.Touch then
+        dragInput = input
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if input == dragInput and dragging then
+        update(input)
+    end
+end)
+
 -- ================= CAMERA =================
 RunService.RenderStepped:Connect(function(dt)
     if not lockOn or not targetHRP or not HRP then return end
@@ -185,17 +231,6 @@ RunService.RenderStepped:Connect(function(dt)
     distLabel.Text = "Dist: "..math.floor((HRP.Position - targetHRP.Position).Magnitude)
 end)
 
--- ================= BOTÃO =================
-local btn = Instance.new("TextButton", gui)
-btn.Size = UDim2.new(0,120,0,40)
-btn.Position = UDim2.new(0.75,0,0.85,0)
-btn.Text = "LOCK OFF"
-btn.TextScaled = true
-btn.BackgroundColor3 = Color3.fromRGB(30,30,30)
-btn.BackgroundTransparency = 0.7
-btn.TextColor3 = Color3.fromRGB(255,255,255)
-Instance.new("UICorner", btn).CornerRadius = UDim.new(0,10)
-
 btn.MouseButton1Click:Connect(function()
     lockOn = not lockOn
     if lockOn then
@@ -228,4 +263,4 @@ end
 if LP.Character then onCharacter(LP.Character) end
 LP.CharacterAdded:Connect(onCharacter)
 
-warn("[LockOn HUD] Carregado e corrigido ✅")
+warn("[LockOn HUD] Carregado com DRAG ✅")
