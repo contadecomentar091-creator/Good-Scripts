@@ -1,5 +1,5 @@
 --[[
- Lock On Mobile - HUD estilo console (FINAL + DRAG)
+ Lock On Mobile - HUD estilo console (FINAL FIX + GUI FIX + DRAG)
 ]]
 
 local Players = game:GetService("Players")
@@ -9,6 +9,8 @@ local Camera = workspace.CurrentCamera
 
 local LP = Players.LocalPlayer
 repeat task.wait() until LP.Character
+
+local PlayerGui = LP:WaitForChild("PlayerGui")
 
 -- ================= CONFIG =================
 local LOCK_RANGE = 120
@@ -98,12 +100,14 @@ local function createRing(model)
     ring.LineThickness = 0.06
     ring.Color3 = Color3.fromRGB(255, 0, 0)
     ring.SurfaceTransparency = 1
-    ring.Parent = game.CoreGui
+    ring.Parent = PlayerGui -- 🔥 corrigido
 end
 
--- ================= HUD =================
-local gui = Instance.new("ScreenGui", game.CoreGui)
+-- ================= GUI =================
+local gui = Instance.new("ScreenGui")
 gui.Name = "LockOnHUD"
+gui.ResetOnSpawn = false
+gui.Parent = PlayerGui -- 🔥 corrigido
 
 local infoFrame = Instance.new("Frame", gui)
 infoFrame.Size = UDim2.new(0,140,0,50)
@@ -144,7 +148,7 @@ btn.BackgroundTransparency = 0.7
 btn.TextColor3 = Color3.fromRGB(255,255,255)
 Instance.new("UICorner", btn).CornerRadius = UDim.new(0,10)
 
--- ================= DRAG (MOBILE + PC) =================
+-- ================= DRAG =================
 local dragging = false
 local dragInput
 local dragStart
@@ -231,6 +235,7 @@ RunService.RenderStepped:Connect(function(dt)
     distLabel.Text = "Dist: "..math.floor((HRP.Position - targetHRP.Position).Magnitude)
 end)
 
+-- ================= BOTÃO CLICK =================
 btn.MouseButton1Click:Connect(function()
     lockOn = not lockOn
     if lockOn then
@@ -263,4 +268,4 @@ end
 if LP.Character then onCharacter(LP.Character) end
 LP.CharacterAdded:Connect(onCharacter)
 
-warn("[LockOn HUD] Carregado com DRAG ✅")
+warn("[LockOn HUD] Corrigido + Drag OK ✅")
