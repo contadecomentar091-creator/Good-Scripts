@@ -1,0 +1,71 @@
+local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
+
+local Window = WindUI:CreateWindow({
+    Title = "Mano Hub Squid Game X",
+    Icon = "rbxassetid://115038982113392",
+    Author = "Sae",
+    Folder = "ManoHub",
+    Size = UDim2.fromOffset(550, 300),
+    Transparent = true,
+    Theme = "Dark",
+    SideBarWidth = 190,
+    HasOutline = false,
+    HideSearchBar = true,
+    ScrollBarEnabled = false,
+    User = {
+        Enabled = true,
+        Anonymous = false
+    },
+})
+
+Window:EditOpenButton({
+    Title = "Mano Hub Squid Game X - Open",
+    Icon = "monitor",
+    CornerRadius = UDim.new(0, 6),
+    StrokeThickness = 2,
+    Color = ColorSequence.new(Color3.fromRGB(30, 30, 30), Color3.fromRGB(255, 255, 255)),
+    Draggable = true
+})
+
+local Tab = Window:Tab({
+    Title = "Main",
+    Icon = "home",
+    Locked = false,
+})
+
+-- Lista de códigos
+local codes = {
+    "$500K$","$1M$","$100K$","$250K$",
+    "FRONTMAN","REVAMP","150KLIKES","PENTA","MINGLE",
+    "UPDATE11RELEASE","DAILYBOOST","350K_LIKES","RISKYPLAY",
+    "REWARDTIME","RAININGCASH","STACKED","NEVERLOSE",
+    "FASTPASS","LEVELUP","400K_LIKES","LUCKYSHOT",
+    "DOUBLELUCK","BONUSLEVEL","500K_LIKES","BIGSPREE",
+    "MEGAPRIZE","EXTRABONUS","FREEWIN","STACKBOOST",
+    "MAXBOOST","WINTHEGAME","REWARDZONE","POWERHOUR",
+    "FINALROUND","GOLDRUSH","FIRSTPLACE","MYSTERYWIN",
+    "TOPPLAYER","SUPERJUMP","FREEPOWER","CASHBLAST",
+    "BONANZA","FASTCASHOUT","MEGACOINS","RISINGSTAR",
+    "VALENTINES"
+}
+
+-- Remote
+local remote = game:GetService("ReplicatedStorage"):WaitForChild("Remotes"):WaitForChild("Code")
+
+-- Botão
+Tab:Button({
+    Title = "Get All Codes (Fast)",
+    Desc = "Resgata todos os códigos rapidamente",
+    Callback = function()
+        for _, code in ipairs(codes) do
+            pcall(function()
+                remote:InvokeServer(code)
+            end)
+
+            print("Enviado:", code)
+            task.wait(0.3)
+        end
+
+        print("Todos os códigos foram enviados!")
+    end
+})
