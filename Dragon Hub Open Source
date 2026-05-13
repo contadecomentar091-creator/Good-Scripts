@@ -1,0 +1,730 @@
+local RunService = game:GetService('RunService')
+local Players = game:GetService('Players')
+local UserInputService = game:GetService('UserInputService')
+local TweenService = game:GetService('TweenService')
+
+local lp = Players.LocalPlayer
+local char = lp.Character or lp.CharacterAdded:Wait()
+local hrp = char:WaitForChild('HumanoidRootPart')
+local humanoid = char:WaitForChild('Humanoid')
+local camera = workspace.CurrentCamera
+
+local targets = {}
+local targetIndex = 0
+local currentTarget = nil
+local enabled = false
+local autoCycle = false
+local deathFlingEnabled = false
+
+local offsetX, offsetY, offsetZ = 0, 0, 0
+local rotX, rotY, rotZ = 0, 0, 0
+
+local originalFallen = workspace.FallenPartsDestroyHeight
+local fallenHeight = 150
+
+local mainConn = nil
+local cycleConn = nil
+local deathFlingConn = nil
+local inputConn = nil
+local charConn = nil
+
+local savedPos = nil
+local guiDestroyed = false
+
+local enableToggle = nil
+local autoCycleToggle = nil
+local deathFlingToggle = nil
+local triggerListRefresh = function() end
+
+local deathWatchConn = nil
+local function hookDeathWatch()
+	if deathWatchConn then deathWatchConn:Disconnect(); deathWatchConn = nil end
+	local hum = char and char:FindFirstChildWhichIsA('Humanoid')
+	if not hum then return end
+	deathWatchConn = hum.Died:Connect(function()
+		if enabled then
+			enabled = false
+			if enableToggle then enableToggle.setState(false) end
+			stop(); stopCycle()
+		end
+		if deathFlingEnabled then
+			deathFlingEnabled = false
+			if deathFlingToggle then deathFlingToggle.setState(false) end
+			stopDeathFling()
+		end
+		triggerListRefresh()
+	end)
+end
+
+hookDeathWatch()
+
+local function buildTargets()
+	targets = {}
+	for _, p in ipairs(Players:GetPlayers()) do
+		if p ~= lp and p.Character then
+			local h = p.Character:FindFirstChild('HumanoidRootPart')
+			if h then table.insert(targets, h) end
+		end
+	end
+	local folder = workspace:FindFirstChild('Characters')
+	if folder then
+		for _, model in ipairs(folder:GetChildren()) do
+			if model ~= char and not string.find(model.Name, '_Decoy') then
+				local h = model:FindFirstChild('HumanoidRootPart')
+				if h then table.insert(targets, h) end
+			end
+		end
+	end
+end
+
+local function getNearestToMouse()
+	buildTargets()
+	local mp = UserInputService:GetMouseLocation()
+	local shortest, nearest, nearestIdx = math.huge, nil, 0
+	for i, t in ipairs(targets) do
+		if t and t.Parent then
+			local sp, on = camera:WorldToViewportPoint(t.Position)
+			if on then
+				local dist = (Vector2.new(sp.X, sp.Y) - mp).Magnitude
+				if dist < shortest then
+					shortest = dist; nearest = t; nearestIdx = i
+				end
+			end
+		end
+	end
+	return nearest, nearestIdx
+end
+
+local function cycleTarget(forward)
+	buildTargets()
+	if #targets == 0 then currentTarget = nil; return end
+	if forward then
+		targetIndex = (targetIndex % #targets) + 1
+	else
+		targetIndex = ((targetIndex - 2) % #targets) + 1
+	end
+	currentTarget = targets[targetIndex]
+end
+
+local function tpBypass(targetCF)
+	if not hrp or not hrp.Parent then return end
+	local i = 0; local conn
+	conn = RunService.Heartbeat:Connect(function()
+		i += 1
+		hrp.CFrame = targetCF
+		if i >= 11 then
+			conn:Disconnect()
+			hrp.CFrame = targetCF
+		end
+	end)
+end
+
+local function startDeathFling()
+	if deathFlingConn then deathFlingConn:Disconnect() end
+	deathFlingConn = RunService.Heartbeat:Connect(function()
+		local hum = char and char:FindFirstChild('Humanoid')
+		if not hum then return end
+		pcall(function()
+			sethiddenproperty(hum, 'MoveDirectionInternal', Vector3.new(0/0, 0/0, 0/0))
+			sethiddenproperty(hum, 'NetworkHumanoidState', Enum.HumanoidStateType.Freefall)
+		end)
+	end)
+end
+
+local function stopDeathFling()
+	if deathFlingConn then deathFlingConn:Disconnect(); deathFlingConn = nil end
+	local hum = char and char:FindFirstChild('Humanoid')
+	if hum then
+		pcall(function()
+			sethiddenproperty(hum, 'MoveDirectionInternal', Vector3.zero)
+			sethiddenproperty(hum, 'NetworkHumanoidState', Enum.HumanoidStateType.Running)
+		end)
+	end
+end
+
+local function updateHRP()
+	if not hrp or not hrp.Parent then return end
+	if not currentTarget or not currentTarget.Parent then
+		if savedPos then
+			local relOff = CFrame.new(offsetX, offsetY, offsetZ)
+			local relRot = CFrame.Angles(math.rad(rotX), math.rad(rotY), math.rad(rotZ))
+			hrp.CFrame = savedPos * relOff * relRot
+		end
+		return
+	end
+	local relOff = CFrame.new(offsetX, offsetY, offsetZ)
+	local relRot = CFrame.Angles(math.rad(rotX), math.rad(rotY), math.rad(rotZ))
+	hrp.CFrame = currentTarget.CFrame * relOff * relRot
+end
+
+local function start()
+	if mainConn then mainConn:Disconnect() end
+	if hrp and hrp.Parent then savedPos = hrp.CFrame end
+	workspace.FallenPartsDestroyHeight = fallenHeight
+	mainConn = RunService.Heartbeat:Connect(function()
+		if enabled then pcall(updateHRP) end
+	end)
+end
+
+local function stop()
+	if mainConn then mainConn:Disconnect(); mainConn = nil end
+	workspace.FallenPartsDestroyHeight = originalFallen
+	if savedPos and hrp and hrp.Parent then
+		tpBypass(savedPos)
+		savedPos = nil
+	end
+	currentTarget = nil
+	targetIndex = 0
+end
+
+local function startCycle()
+	if cycleConn then cycleConn:Disconnect() end
+	cycleConn = RunService.Heartbeat:Connect(function()
+		if not enabled or not autoCycle then return end
+		buildTargets()
+		if #targets == 0 then return end
+		targetIndex = (targetIndex % #targets) + 1
+		currentTarget = targets[targetIndex]
+	end)
+end
+
+local function stopCycle()
+	if cycleConn then cycleConn:Disconnect(); cycleConn = nil end
+end
+
+local function doInstantRespawn()
+	buildTargets()
+	if #targets == 0 then return end
+	local t = targets[math.random(1, #targets)]
+	if not t or not t.Parent then return end
+	currentTarget = t
+	if not deathFlingEnabled then
+		deathFlingEnabled = true
+		deathFlingToggle.setState(true)
+		startDeathFling()
+	end
+	if not enabled then
+		enabled = true
+		enableToggle.setState(true)
+		start()
+	end
+	updateStatus()
+	triggerListRefresh()
+end
+
+local function destroyAll()
+	if guiDestroyed then return end
+	guiDestroyed = true
+	if inputConn then inputConn:Disconnect(); inputConn = nil end
+	if charConn then charConn:Disconnect(); charConn = nil end
+	if deathWatchConn then deathWatchConn:Disconnect(); deathWatchConn = nil end
+	stop()
+	stopCycle()
+	stopDeathFling()
+	workspace.FallenPartsDestroyHeight = originalFallen
+end
+
+local existing = lp.PlayerGui:FindFirstChild('InfiniteHitbox')
+if existing then existing:Destroy() end
+
+local gui = Instance.new('ScreenGui')
+gui.Name = 'InfiniteHitbox'
+gui.ResetOnSpawn = false
+gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+gui.Parent = lp.PlayerGui
+
+local main = Instance.new('Frame')
+main.Size = UDim2.new(0, 420, 0, 580)
+main.Position = UDim2.new(0.5, -210, 0.5, -290)
+main.BackgroundColor3 = Color3.fromRGB(8, 10, 18)
+main.BorderSizePixel = 0
+main.Active = true
+main.Draggable = true
+main.Parent = gui
+Instance.new('UICorner', main).CornerRadius = UDim.new(0, 16)
+
+local mainStroke = Instance.new('UIStroke', main)
+mainStroke.Color = Color3.fromRGB(30, 90, 200)
+mainStroke.Thickness = 2.5
+
+local titleBar = Instance.new('Frame')
+titleBar.Size = UDim2.new(1, 0, 0, 52)
+titleBar.BackgroundColor3 = Color3.fromRGB(12, 15, 25)
+titleBar.BorderSizePixel = 0
+titleBar.Parent = main
+Instance.new('UICorner', titleBar).CornerRadius = UDim.new(0, 16)
+
+local titleFix = Instance.new('Frame')
+titleFix.Size = UDim2.new(1, 0, 0.3, 0)
+titleFix.Position = UDim2.new(0, 0, 0.7, 0)
+titleFix.BackgroundColor3 = Color3.fromRGB(12, 15, 25)
+titleFix.BorderSizePixel = 0
+titleFix.Parent = titleBar
+
+local titleLbl = Instance.new('TextLabel')
+titleLbl.Size = UDim2.new(1, -110, 1, 0)
+titleLbl.Position = UDim2.new(0, 16, 0, 0)
+titleLbl.BackgroundTransparency = 1
+titleLbl.Text = '∞  Infinite Hitbox'
+titleLbl.TextColor3 = Color3.fromRGB(100, 180, 255)
+titleLbl.TextSize = 16
+titleLbl.Font = Enum.Font.GothamBold
+titleLbl.TextXAlignment = Enum.TextXAlignment.Left
+titleLbl.Parent = titleBar
+
+local closeBtn = Instance.new('TextButton')
+closeBtn.Size = UDim2.new(0, 36, 0, 36)
+closeBtn.Position = UDim2.new(1, -44, 0.5, -18)
+closeBtn.BackgroundColor3 = Color3.fromRGB(200, 40, 60)
+closeBtn.Text = '×'
+closeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+closeBtn.TextSize = 22
+closeBtn.Font = Enum.Font.GothamBold
+closeBtn.Parent = titleBar
+Instance.new('UICorner', closeBtn).CornerRadius = UDim.new(1, 0)
+closeBtn.MouseEnter:Connect(function()
+	TweenService:Create(closeBtn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(255, 60, 80)}):Play()
+end)
+closeBtn.MouseLeave:Connect(function()
+	TweenService:Create(closeBtn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(200, 40, 60)}):Play()
+end)
+closeBtn.MouseButton1Click:Connect(function()
+	destroyAll(); gui:Destroy()
+end)
+
+local statusBar = Instance.new('Frame')
+statusBar.Size = UDim2.new(1, -24, 0, 36)
+statusBar.Position = UDim2.new(0, 12, 0, 62)
+statusBar.BackgroundColor3 = Color3.fromRGB(15, 20, 32)
+statusBar.BorderSizePixel = 0
+statusBar.Parent = main
+Instance.new('UICorner', statusBar).CornerRadius = UDim.new(0, 10)
+
+local statusStroke = Instance.new('UIStroke', statusBar)
+statusStroke.Color = Color3.fromRGB(25, 70, 150)
+statusStroke.Thickness = 1
+
+local dot = Instance.new('Frame')
+dot.Size = UDim2.new(0, 12, 0, 12)
+dot.Position = UDim2.new(0, 12, 0.5, -6)
+dot.BackgroundColor3 = Color3.fromRGB(180, 50, 50)
+dot.BorderSizePixel = 0
+dot.Parent = statusBar
+Instance.new('UICorner', dot).CornerRadius = UDim.new(1, 0)
+
+local statusText = Instance.new('TextLabel')
+statusText.Size = UDim2.new(1, -35, 1, 0)
+statusText.Position = UDim2.new(0, 32, 0, 0)
+statusText.BackgroundTransparency = 1
+statusText.Text = 'Disabled'
+statusText.TextColor3 = Color3.fromRGB(150, 160, 180)
+statusText.TextSize = 13
+statusText.Font = Enum.Font.Gotham
+statusText.TextXAlignment = Enum.TextXAlignment.Left
+statusText.Parent = statusBar
+
+local function updateStatus()
+	if guiDestroyed then return end
+	if enabled then
+		TweenService:Create(dot, TweenInfo.new(0.3), {BackgroundColor3 = Color3.fromRGB(50, 200, 100)}):Play()
+		statusStroke.Color = Color3.fromRGB(50, 150, 100)
+		if currentTarget and currentTarget.Parent then
+			statusText.TextColor3 = Color3.fromRGB(50, 200, 100)
+			statusText.Text = '● Active — ' .. currentTarget.Parent.Name
+		else
+			statusText.TextColor3 = Color3.fromRGB(220, 180, 50)
+			statusText.Text = '● Active — No Target'
+		end
+	else
+		TweenService:Create(dot, TweenInfo.new(0.3), {BackgroundColor3 = Color3.fromRGB(180, 50, 50)}):Play()
+		statusText.TextColor3 = Color3.fromRGB(150, 160, 180)
+		statusText.Text = '● Disabled'
+		statusStroke.Color = Color3.fromRGB(25, 70, 150)
+	end
+end
+
+RunService.Heartbeat:Connect(function()
+	if guiDestroyed then return end
+	updateStatus()
+end)
+
+local content = Instance.new('ScrollingFrame')
+content.Size = UDim2.new(1, -24, 1, -116)
+content.Position = UDim2.new(0, 12, 0, 108)
+content.BackgroundTransparency = 1
+content.BorderSizePixel = 0
+content.ScrollBarThickness = 5
+content.ScrollBarImageColor3 = Color3.fromRGB(40, 100, 220)
+content.CanvasSize = UDim2.new(0, 0, 0, 0)
+content.AutomaticCanvasSize = Enum.AutomaticSize.Y
+content.Parent = main
+
+local layout = Instance.new('UIListLayout', content)
+layout.SortOrder = Enum.SortOrder.LayoutOrder
+layout.Padding = UDim.new(0, 10)
+
+local cpad = Instance.new('UIPadding', content)
+cpad.PaddingBottom = UDim.new(0, 12)
+
+local order = 0
+local function nextOrder() order += 1; return order end
+
+local function makeSection(text)
+	local f = Instance.new('Frame')
+	f.Size = UDim2.new(1, 0, 0, 28)
+	f.BackgroundColor3 = Color3.fromRGB(18, 25, 40)
+	f.BorderSizePixel = 0
+	f.LayoutOrder = nextOrder()
+	f.Parent = content
+	Instance.new('UICorner', f).CornerRadius = UDim.new(0, 8)
+	local s = Instance.new('UIStroke', f)
+	s.Color = Color3.fromRGB(30, 80, 180); s.Thickness = 1
+	local l = Instance.new('TextLabel')
+	l.Size = UDim2.new(1, -14, 1, 0); l.Position = UDim2.new(0, 14, 0, 0)
+	l.BackgroundTransparency = 1; l.Text = '▸ '..text
+	l.TextColor3 = Color3.fromRGB(100, 170, 255); l.TextSize = 12
+	l.Font = Enum.Font.GothamBold; l.TextXAlignment = Enum.TextXAlignment.Left
+	l.Parent = f
+end
+
+local function makeToggle(text, onChange)
+	local f = Instance.new('Frame')
+	f.Size = UDim2.new(1, 0, 0, 44); f.BackgroundColor3 = Color3.fromRGB(12, 18, 30)
+	f.BorderSizePixel = 0; f.LayoutOrder = nextOrder(); f.Parent = content
+	Instance.new('UICorner', f).CornerRadius = UDim.new(0, 10)
+	local s = Instance.new('UIStroke', f)
+	s.Color = Color3.fromRGB(25, 65, 140); s.Thickness = 1
+	local l = Instance.new('TextLabel')
+	l.Size = UDim2.new(1, -75, 1, 0); l.Position = UDim2.new(0, 14, 0, 0)
+	l.BackgroundTransparency = 1; l.Text = text
+	l.TextColor3 = Color3.fromRGB(200, 210, 230); l.TextSize = 13
+	l.Font = Enum.Font.Gotham; l.TextXAlignment = Enum.TextXAlignment.Left; l.Parent = f
+	local track = Instance.new('Frame')
+	track.Size = UDim2.new(0, 52, 0, 26); track.Position = UDim2.new(1, -62, 0.5, -13)
+	track.BackgroundColor3 = Color3.fromRGB(30, 40, 60); track.BorderSizePixel = 0; track.Parent = f
+	Instance.new('UICorner', track).CornerRadius = UDim.new(1, 0)
+	local knob = Instance.new('Frame')
+	knob.Size = UDim2.new(0, 20, 0, 20); knob.Position = UDim2.new(0, 3, 0.5, -10)
+	knob.BackgroundColor3 = Color3.fromRGB(180, 190, 210); knob.BorderSizePixel = 0; knob.Parent = track
+	Instance.new('UICorner', knob).CornerRadius = UDim.new(1, 0)
+	local state = false
+	local btn = Instance.new('TextButton')
+	btn.Size = UDim2.new(1, 0, 1, 0); btn.BackgroundTransparency = 1; btn.Text = ''; btn.Parent = track
+	local function updateVis()
+		if state then
+			TweenService:Create(track, TweenInfo.new(0.25), {BackgroundColor3 = Color3.fromRGB(30, 100, 220)}):Play()
+			TweenService:Create(knob, TweenInfo.new(0.25), {Position = UDim2.new(1, -23, 0.5, -10), BackgroundColor3 = Color3.fromRGB(240, 250, 255)}):Play()
+		else
+			TweenService:Create(track, TweenInfo.new(0.25), {BackgroundColor3 = Color3.fromRGB(30, 40, 60)}):Play()
+			TweenService:Create(knob, TweenInfo.new(0.25), {Position = UDim2.new(0, 3, 0.5, -10), BackgroundColor3 = Color3.fromRGB(180, 190, 210)}):Play()
+		end
+	end
+	btn.MouseButton1Click:Connect(function()
+		state = not state; updateVis(); onChange(state)
+	end)
+	return {setState = function(ns) state = ns; updateVis() end}
+end
+
+local function makeButton(text, key, onClick)
+	local f = Instance.new('Frame')
+	f.Size = UDim2.new(1, 0, 0, 44); f.BackgroundColor3 = Color3.fromRGB(12, 18, 30)
+	f.BorderSizePixel = 0; f.LayoutOrder = nextOrder(); f.Parent = content
+	Instance.new('UICorner', f).CornerRadius = UDim.new(0, 10)
+	local s = Instance.new('UIStroke', f); s.Color = Color3.fromRGB(25, 65, 140); s.Thickness = 1
+	local l = Instance.new('TextLabel')
+	l.Size = UDim2.new(1, -100, 1, 0); l.Position = UDim2.new(0, 14, 0, 0)
+	l.BackgroundTransparency = 1; l.Text = text
+	l.TextColor3 = Color3.fromRGB(200, 210, 230); l.TextSize = 13
+	l.Font = Enum.Font.Gotham; l.TextXAlignment = Enum.TextXAlignment.Left; l.Parent = f
+	local pb = Instance.new('TextButton')
+	pb.Size = UDim2.new(0, 86, 0, 28); pb.Position = UDim2.new(1, -94, 0.5, -14)
+	pb.BackgroundColor3 = Color3.fromRGB(30, 80, 180); pb.Text = 'FIRE  ['..key..']'
+	pb.TextColor3 = Color3.fromRGB(220, 230, 255); pb.TextSize = 11
+	pb.Font = Enum.Font.GothamBold; pb.Parent = f
+	Instance.new('UICorner', pb).CornerRadius = UDim.new(0, 6)
+	pb.MouseEnter:Connect(function()
+		TweenService:Create(pb, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(50, 120, 255)}):Play()
+	end)
+	pb.MouseLeave:Connect(function()
+		TweenService:Create(pb, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(30, 80, 180)}):Play()
+	end)
+	pb.MouseButton1Click:Connect(function()
+		TweenService:Create(pb, TweenInfo.new(0.05), {BackgroundColor3 = Color3.fromRGB(100, 200, 255)}):Play()
+		task.delay(0.1, function()
+			TweenService:Create(pb, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(30, 80, 180)}):Play()
+		end)
+		onClick()
+	end)
+end
+
+local function makeSlider(text, minV, maxV, defV, onChange)
+	local f = Instance.new('Frame')
+	f.Size = UDim2.new(1, 0, 0, 58); f.BackgroundColor3 = Color3.fromRGB(12, 18, 30)
+	f.BorderSizePixel = 0; f.LayoutOrder = nextOrder(); f.Parent = content
+	Instance.new('UICorner', f).CornerRadius = UDim.new(0, 10)
+	local s = Instance.new('UIStroke', f); s.Color = Color3.fromRGB(25, 65, 140); s.Thickness = 1
+	local val = Instance.new('TextLabel')
+	val.Size = UDim2.new(0, 55, 0, 24); val.Position = UDim2.new(1, -62, 0, 8)
+	val.BackgroundTransparency = 1; val.Text = tostring(defV)
+	val.TextColor3 = Color3.fromRGB(80, 160, 255); val.TextSize = 14
+	val.Font = Enum.Font.GothamBold; val.TextXAlignment = Enum.TextXAlignment.Right; val.Parent = f
+	local lbl = Instance.new('TextLabel')
+	lbl.Size = UDim2.new(1, -70, 0, 24); lbl.Position = UDim2.new(0, 14, 0, 8)
+	lbl.BackgroundTransparency = 1; lbl.Text = text
+	lbl.TextColor3 = Color3.fromRGB(190, 200, 220); lbl.TextSize = 13
+	lbl.Font = Enum.Font.Gotham; lbl.TextXAlignment = Enum.TextXAlignment.Left; lbl.Parent = f
+	local track = Instance.new('Frame')
+	track.Size = UDim2.new(1, -28, 0, 6); track.Position = UDim2.new(0, 14, 0, 42)
+	track.BackgroundColor3 = Color3.fromRGB(20, 30, 50); track.BorderSizePixel = 0; track.Parent = f
+	Instance.new('UICorner', track).CornerRadius = UDim.new(1, 0)
+	local ratio = (defV - minV) / (maxV - minV)
+	local fill = Instance.new('Frame')
+	fill.Size = UDim2.new(ratio, 0, 1, 0); fill.BackgroundColor3 = Color3.fromRGB(50, 130, 255)
+	fill.BorderSizePixel = 0; fill.Parent = track
+	Instance.new('UICorner', fill).CornerRadius = UDim.new(1, 0)
+	local knob = Instance.new('Frame')
+	knob.Size = UDim2.new(0, 16, 0, 16); knob.AnchorPoint = Vector2.new(0.5, 0.5)
+	knob.Position = UDim2.new(ratio, 0, 0.5, 0); knob.BackgroundColor3 = Color3.fromRGB(200, 220, 255)
+	knob.BorderSizePixel = 0; knob.ZIndex = 2; knob.Parent = track
+	Instance.new('UICorner', knob).CornerRadius = UDim.new(1, 0)
+	local hit = Instance.new('TextButton')
+	hit.Size = UDim2.new(1, 0, 0, 28); hit.Position = UDim2.new(0, 0, 0.5, -14)
+	hit.BackgroundTransparency = 1; hit.Text = ''; hit.ZIndex = 3; hit.Parent = track
+	local dragging = false
+	hit.MouseButton1Down:Connect(function() dragging = true end)
+	UserInputService.InputEnded:Connect(function(i)
+		if i.UserInputType == Enum.UserInputType.MouseButton1 then dragging = false end
+	end)
+	RunService.RenderStepped:Connect(function()
+		if not dragging then return end
+		local mouse = UserInputService:GetMouseLocation()
+		local tp = track.AbsolutePosition; local ts = track.AbsoluteSize
+		local r = math.clamp((mouse.X - tp.X) / ts.X, 0, 1)
+		local v = math.round(minV + (maxV - minV) * r)
+		fill.Size = UDim2.new(r, 0, 1, 0); knob.Position = UDim2.new(r, 0, 0.5, 0)
+		val.Text = tostring(v); onChange(v)
+	end)
+end
+
+local function makeTargetList()
+	local f = Instance.new('Frame')
+	f.Size = UDim2.new(1, 0, 0, 220); f.BackgroundColor3 = Color3.fromRGB(10, 15, 25)
+	f.BorderSizePixel = 0; f.LayoutOrder = nextOrder(); f.Parent = content
+	Instance.new('UICorner', f).CornerRadius = UDim.new(0, 10)
+	local fs = Instance.new('UIStroke', f); fs.Color = Color3.fromRGB(30, 80, 180); fs.Thickness = 1.5
+	local top = Instance.new('Frame')
+	top.Size = UDim2.new(1, 0, 0, 34); top.BackgroundColor3 = Color3.fromRGB(15, 22, 38)
+	top.BorderSizePixel = 0; top.Parent = f
+	Instance.new('UICorner', top).CornerRadius = UDim.new(0, 10)
+	local fix2 = Instance.new('Frame')
+	fix2.Size = UDim2.new(1, 0, 0.35, 0); fix2.Position = UDim2.new(0, 0, 0.65, 0)
+	fix2.BackgroundColor3 = Color3.fromRGB(15, 22, 38); fix2.BorderSizePixel = 0; fix2.Parent = top
+	local tlbl = Instance.new('TextLabel')
+	tlbl.Size = UDim2.new(0.5, 0, 1, 0); tlbl.Position = UDim2.new(0, 12, 0, 0)
+	tlbl.BackgroundTransparency = 1; tlbl.Text = 'TARGETS'
+	tlbl.TextColor3 = Color3.fromRGB(100, 170, 255); tlbl.TextSize = 12
+	tlbl.Font = Enum.Font.GothamBold; tlbl.TextXAlignment = Enum.TextXAlignment.Left; tlbl.Parent = top
+	local cnt = Instance.new('TextLabel')
+	cnt.Size = UDim2.new(0.3, 0, 1, 0); cnt.Position = UDim2.new(0, 85, 0, 0)
+	cnt.BackgroundTransparency = 1; cnt.Text = '(0)'
+	cnt.TextColor3 = Color3.fromRGB(80, 140, 220); cnt.TextSize = 11
+	cnt.Font = Enum.Font.Gotham; cnt.TextXAlignment = Enum.TextXAlignment.Left; cnt.Parent = top
+	local ref = Instance.new('TextButton')
+	ref.Size = UDim2.new(0, 70, 0, 24); ref.Position = UDim2.new(1, -78, 0.5, -12)
+	ref.BackgroundColor3 = Color3.fromRGB(30, 80, 180); ref.Text = '↻ Refresh'
+	ref.TextColor3 = Color3.fromRGB(220, 230, 255); ref.TextSize = 11
+	ref.Font = Enum.Font.GothamBold; ref.Parent = top
+	Instance.new('UICorner', ref).CornerRadius = UDim.new(0, 6)
+	ref.MouseEnter:Connect(function()
+		TweenService:Create(ref, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(40, 100, 220)}):Play()
+	end)
+	ref.MouseLeave:Connect(function()
+		TweenService:Create(ref, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(30, 80, 180)}):Play()
+	end)
+	local scroll = Instance.new('ScrollingFrame')
+	scroll.Size = UDim2.new(1, -12, 1, -40); scroll.Position = UDim2.new(0, 6, 0, 36)
+	scroll.BackgroundTransparency = 1; scroll.BorderSizePixel = 0; scroll.ScrollBarThickness = 4
+	scroll.ScrollBarImageColor3 = Color3.fromRGB(40, 100, 220); scroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
+	scroll.CanvasSize = UDim2.new(0, 0, 0, 0); scroll.Parent = f
+	local sl2 = Instance.new('UIListLayout', scroll)
+	sl2.SortOrder = Enum.SortOrder.LayoutOrder; sl2.Padding = UDim.new(0, 4)
+	local sp2 = Instance.new('UIPadding', scroll)
+	sp2.PaddingTop = UDim.new(0, 4); sp2.PaddingBottom = UDim.new(0, 4)
+	local empty = Instance.new('TextLabel')
+	empty.Size = UDim2.new(1, 0, 0, 32); empty.BackgroundTransparency = 1
+	empty.Text = 'No targets found'; empty.TextColor3 = Color3.fromRGB(80, 100, 130)
+	empty.TextSize = 12; empty.Font = Enum.Font.Gotham; empty.LayoutOrder = 1; empty.Parent = scroll
+	local pool = {}
+
+	local function refreshList()
+		if guiDestroyed then return end
+		for _, b in ipairs(pool) do b:Destroy() end
+		pool = {}
+		buildTargets()
+		empty.Visible = (#targets == 0)
+		cnt.Text = '('..#targets..')'
+		local isNone = (currentTarget == nil)
+		local nb = Instance.new('TextButton')
+		nb.Size = UDim2.new(1, -6, 0, 32)
+		nb.BackgroundColor3 = isNone and Color3.fromRGB(60, 30, 30) or Color3.fromRGB(18, 25, 42)
+		nb.Text = ''; nb.LayoutOrder = 0; nb.Parent = scroll
+		Instance.new('UICorner', nb).CornerRadius = UDim.new(0, 7)
+		local nbs = Instance.new('UIStroke', nb)
+		nbs.Color = isNone and Color3.fromRGB(200, 80, 80) or Color3.fromRGB(30, 60, 120); nbs.Thickness = 1
+		local nd = Instance.new('Frame')
+		nd.Size = UDim2.new(0, 8, 0, 8); nd.Position = UDim2.new(0, 10, 0.5, -4)
+		nd.BackgroundColor3 = isNone and Color3.fromRGB(220, 80, 80) or Color3.fromRGB(80, 120, 180)
+		nd.BorderSizePixel = 0; nd.Parent = nb
+		Instance.new('UICorner', nd).CornerRadius = UDim.new(1, 0)
+		local nn = Instance.new('TextLabel')
+		nn.Size = UDim2.new(1, -30, 1, 0); nn.Position = UDim2.new(0, 26, 0, 0)
+		nn.BackgroundTransparency = 1; nn.Text = '— None (idle)'
+		nn.TextColor3 = isNone and Color3.fromRGB(220, 120, 120) or Color3.fromRGB(140, 160, 190)
+		nn.TextSize = 12; nn.Font = Enum.Font.Gotham
+		nn.TextXAlignment = Enum.TextXAlignment.Left; nn.Parent = nb
+		nb.MouseButton1Click:Connect(function()
+			currentTarget = nil; targetIndex = 0; updateStatus(); refreshList()
+		end)
+		table.insert(pool, nb)
+		for i, t in ipairs(targets) do
+			local sel = (currentTarget == t)
+			local btn = Instance.new('TextButton')
+			btn.Size = UDim2.new(1, -6, 0, 32)
+			btn.BackgroundColor3 = sel and Color3.fromRGB(30, 90, 180) or Color3.fromRGB(18, 25, 42)
+			btn.Text = ''; btn.LayoutOrder = i; btn.Parent = scroll
+			Instance.new('UICorner', btn).CornerRadius = UDim.new(0, 7)
+			local bs = Instance.new('UIStroke', btn)
+			bs.Color = sel and Color3.fromRGB(60, 140, 255) or Color3.fromRGB(30, 60, 120); bs.Thickness = 1
+			local d = Instance.new('Frame')
+			d.Size = UDim2.new(0, 8, 0, 8); d.Position = UDim2.new(0, 10, 0.5, -4)
+			d.BackgroundColor3 = sel and Color3.fromRGB(100, 200, 255) or Color3.fromRGB(80, 120, 180)
+			d.BorderSizePixel = 0; d.Parent = btn
+			Instance.new('UICorner', d).CornerRadius = UDim.new(1, 0)
+			local n = Instance.new('TextLabel')
+			n.Size = UDim2.new(1, -16, 1, 0); n.Position = UDim2.new(0, 26, 0, 0)
+			n.BackgroundTransparency = 1
+			n.Text = (t.Parent and t.Parent.Name) or 'Unknown'
+			n.TextColor3 = sel and Color3.fromRGB(220, 240, 255) or Color3.fromRGB(180, 200, 230)
+			n.TextSize = 12; n.Font = Enum.Font.Gotham
+			n.TextXAlignment = Enum.TextXAlignment.Left; n.Parent = btn
+			btn.MouseButton1Click:Connect(function()
+				currentTarget = t; targetIndex = i; updateStatus(); refreshList()
+			end)
+			btn.MouseEnter:Connect(function()
+				if currentTarget ~= t then
+					TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(25, 40, 65)}):Play()
+				end
+			end)
+			btn.MouseLeave:Connect(function()
+				if currentTarget ~= t then
+					TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(18, 25, 42)}):Play()
+				end
+			end)
+			table.insert(pool, btn)
+		end
+		updateStatus()
+	end
+
+	triggerListRefresh = refreshList
+	ref.MouseButton1Click:Connect(refreshList)
+	task.spawn(function()
+		while gui.Parent do
+			if guiDestroyed then break end
+			refreshList(); task.wait(2)
+		end
+	end)
+	refreshList()
+end
+
+makeSection('CONTROLS')
+enableToggle = makeToggle('Enable Hitbox  [Y]', function(state)
+	enabled = state
+	if state then start(); if autoCycle then startCycle() end
+	else stop(); stopCycle() end
+	updateStatus(); triggerListRefresh()
+end)
+
+autoCycleToggle = makeToggle('Auto Cycle  [H]', function(state)
+	autoCycle = state
+	if state and enabled then startCycle() else stopCycle() end
+end)
+
+makeSection('COMBAT')
+deathFlingToggle = makeToggle('Death Fling  [J]', function(state)
+	deathFlingEnabled = state
+	if state then startDeathFling() else stopDeathFling() end
+end)
+
+makeButton('Instant Respawn', 'K', doInstantRespawn)
+
+makeSection('TARGETS')
+makeTargetList()
+
+makeSection('POSITION OFFSET')
+makeSlider('Offset X', -100, 100, 0, function(v) offsetX = v end)
+makeSlider('Offset Y', -100, 100, 0, function(v) offsetY = v end)
+makeSlider('Offset Z', -100, 100, 0, function(v) offsetZ = v end)
+
+makeSection('ROTATION')
+makeSlider('Rotation X', -180, 180, 0, function(v) rotX = v end)
+makeSlider('Rotation Y', -180, 180, 0, function(v) rotY = v end)
+makeSlider('Rotation Z', -180, 180, 0, function(v) rotZ = v end)
+
+makeSection('WORLD')
+makeSlider('Fallen Parts Destroy Height', -500, 500, 150, function(v)
+	fallenHeight = v
+	if enabled then
+		workspace.FallenPartsDestroyHeight = fallenHeight
+	end
+end)
+
+inputConn = UserInputService.InputBegan:Connect(function(input, gpe)
+	if gpe or guiDestroyed then return end
+	if input.KeyCode == Enum.KeyCode.Y then
+		enabled = not enabled
+		enableToggle.setState(enabled)
+		if enabled then start(); if autoCycle then startCycle() end
+		else stop(); stopCycle() end
+		updateStatus(); triggerListRefresh()
+	elseif input.KeyCode == Enum.KeyCode.H then
+		autoCycle = not autoCycle
+		autoCycleToggle.setState(autoCycle)
+		if autoCycle and enabled then startCycle() else stopCycle() end
+	elseif input.KeyCode == Enum.KeyCode.J then
+		deathFlingEnabled = not deathFlingEnabled
+		deathFlingToggle.setState(deathFlingEnabled)
+		if deathFlingEnabled then startDeathFling() else stopDeathFling() end
+	elseif input.KeyCode == Enum.KeyCode.K then
+		doInstantRespawn()
+	elseif input.KeyCode == Enum.KeyCode.Z then
+		local shift = UserInputService:IsKeyDown(Enum.KeyCode.LeftShift)
+		cycleTarget(not shift); updateStatus(); triggerListRefresh()
+	elseif input.UserInputType == Enum.UserInputType.MouseButton3 then
+		local t, i = getNearestToMouse()
+		if t then
+			currentTarget = t; targetIndex = i
+			if not enabled then
+				enabled = true; enableToggle.setState(true); start()
+			end
+			updateStatus(); triggerListRefresh()
+		end
+	end
+end)
+
+charConn = lp.CharacterAdded:Connect(function(newChar)
+	if guiDestroyed then return end
+	char = newChar
+	hrp = newChar:WaitForChild('HumanoidRootPart')
+	humanoid = newChar:WaitForChild('Humanoid')
+	enabled = false; autoCycle = false
+	deathFlingEnabled = false
+	currentTarget = nil
+	targetIndex = 0; savedPos = nil
+	enableToggle.setState(false); autoCycleToggle.setState(false)
+	deathFlingToggle.setState(false)
+	stopCycle(); stopDeathFling()
+	task.defer(hookDeathWatch)
+	updateStatus(); triggerListRefresh()
+end)
+
+updateStatus()
