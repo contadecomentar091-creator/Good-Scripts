@@ -1,0 +1,146 @@
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+
+local LocalPlayer = Players.LocalPlayer
+local Camera = workspace.CurrentCamera
+
+-- CONFIGURAÇÕES
+local CONFIG = {
+    LoopDuration = 1.2,          -- Duração do TP em loop e do Lock-On (1.2 segundos)
+    BottomOffset = 3.0,          -- 🔥 DISTÂNCIA NO PÉ: Quantos studs ABAIXO do centro do inimigo você vai ficar
+    StartDelay = 0.2,            -- Delay de 0.2 segundos antes de iniciar o loop
+    MaxHorizontalDist = 4.0,     -- Limite horizontal para considerar proximidade antes do acionamento
+    MaxVerticalDist = 12.0,      -- Limite de altura máxima para detectar o acionamento
+}
+
+-- UTILS
+local function getHRP(character)
+    return character and character:FindFirstChild("HumanoidRootPart")
+end
+
+local function isAliveModel(model, exceptChar)
+    if model == exceptChar then return false end
+    local root = model:FindFirstChild("HumanoidRootPart")
+    local humanoid = model:FindFirstChildOfClass("Humanoid")
+    return root and humanoid and humanoid.Health > 0
+end
+
+-- MÉTODO DE DETECÇÃO DO REMOTE
+local function getProjectionBreakerRemote()
+    local ok, remote = pcall(function()
+        return ReplicatedStorage
+            :WaitForChild("Knit", 5)
+            :WaitForChild("Knit", 5)
+            :WaitForChild("Services", 5)
+            :WaitForChild("ProjectionBreakerService", 5)
+            :WaitForChild("RE", 5)
+            :WaitForChild("Activated", 5)
+    end)
+    return ok and remote or nil
+end
+
+local targetRemote = getProjectionBreakerRemote()
+
+if not targetRemote then
+    warn("Remote 'ProjectionBreakerService.RE.Activated' não encontrado.")
+    return
+end
+
+-- TARGET FINDER (Inimigo mais próximo - Suporta Players e NPCs)
+local function findNearestTarget()
+    local myChar = LocalPlayer.Character
+    local hrp = getHRP(myChar)
+    if not hrp then return nil end
+
+    local nearest = nil
+    local bestDist = math.huge
+
+    for _, obj in ipairs(workspace:GetDescendants()) do
+        if obj:IsA("Model") and isAliveModel(obj, myChar) then
+            local root = obj:FindFirstChild("HumanoidRootPart")
+            if root then
+                local dist = (hrp.Position - root.Position).Magnitude
+                if dist < bestDist then
+                    bestDist = dist
+                    nearest = obj
+                end
+            end
+        end
+    end
+
+    return nearest
+end
+
+-- 🔥 FUNÇÃO DO TP EM LOOP NO PÉ (ABAIXO) DO INIMIGO
+local function startBottomTeleportLoop(target)
+    local myChar = LocalPlayer.Character
+    local myHrp = getHRP(myChar)
+    local targetHrp = getHRP(target)
+    
+    if not myHrp or not targetHrp then return end
+    
+    local startTime = tick()
+    local connection
+    
+    connection = RunService.RenderStepped:Connect(function()
+        local elapsed = tick() - startTime
+        
+        local hum = target:FindFirstChildOfClass("Humanoid")
+        if elapsed >= CONFIG.LoopDuration or not targetHrp or not targetHrp.Parent or (hum and hum.Health <= 0) then
+            connection:Disconnect()
+            return
+        end
+        
+        -- Calcula a posição exatamente abaixo do HumanoidRootPart do inimigo
+        local enemyPosition = targetHrp.Position
+        local bottomPosition = enemyPosition - Vector3.new(0, CONFIG.BottomOffset, 0)
+        
+        -- Atualiza a posição do seu personagem, fazendo ele olhar para cima na direção do inimigo
+        myHrp.CFrame = CFrame.lookAt(bottomPosition, enemyPosition)
+        
+        -- LOCK-ON DA CÂMERA: Mantém a câmera focada no alvo
+        Camera.CFrame = CFrame.lookAt(Camera.CFrame.Position, enemyPosition)
+    end)
+end
+
+-- HOOKMETAMETHOD
+local oldNamecall
+oldNamecall = hookmetamethod(game, "__namecall", function(self, ...)
+    local method = getnamecallmethod()
+    
+    if method == "FireServer" and self == targetRemote then
+        task.spawn(function()
+            local target = findNearestTarget()
+            if target then
+                local myChar = LocalPlayer.Character
+                local myHrp = getHRP(myChar)
+                local targetHead = target:FindFirstChild("Head")
+                
+                if myHrp and targetHead then
+                    local myPosH = Vector3.new(myHrp.Position.X, 0, myHrp.Position.Z)
+                    local targetPosH = Vector3.new(targetHead.Position.X, 0, targetHead.Position.Z)
+                    local horizontalDist = (myPosH - targetPosH).Magnitude
+                    
+                    local heightDiff = myHrp.Position.Y - targetHead.Position.Y
+                    
+                    -- Critério de ativação original mantido (precisa usar o remote enquanto está em cima da cabeça)
+                    if horizontalDist <= CONFIG.MaxHorizontalDist and heightDiff > 0 and heightDiff <= CONFIG.MaxVerticalDist then
+                        
+                        task.wait(CONFIG.StartDelay)
+                        
+                        local hum = target:FindFirstChildOfClass("Humanoid")
+                        if target and getHRP(target) and hum and hum.Health > 0 then
+                            startBottomTeleportLoop(target)
+                        end
+                        
+                    end
+                end
+            end
+        end)
+    end
+    
+    return oldNamecall(self, ...)
+end)
+
+print("Executor Script Atualizado - Fixado no PÉ do inimigo com LOCK-ON")
