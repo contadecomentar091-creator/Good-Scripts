@@ -1,0 +1,261 @@
+-- open source :P
+
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+
+local LocalPlayer = Players.LocalPlayer
+
+-- GUI
+local gui = Instance.new("ScreenGui")
+gui.Parent = game.CoreGui
+
+local button = Instance.new("TextButton")
+button.Size = UDim2.new(0,140,0,40)
+button.Position = UDim2.new(0,200,0,200)
+button.Text = "BlackFlash : OFF"
+button.BackgroundColor3 = Color3.fromRGB(30,30,30)
+button.TextColor3 = Color3.new(1,1,1)
+button.Parent = gui
+
+-- ADICIONADO: Botão de Abrir / Fechar arrastável
+local toggleGuiButton = Instance.new("TextButton")
+toggleGuiButton.Size = UDim2.new(0, 30, 0, 30)
+toggleGuiButton.Position = UDim2.new(0, 350, 0, 200) -- Posição inicial ao lado do outro
+toggleGuiButton.Text = "X"
+toggleGuiButton.BackgroundColor3 = Color3.fromRGB(150, 0, 0)
+toggleGuiButton.TextColor3 = Color3.new(1, 1, 1)
+toggleGuiButton.Parent = gui
+
+toggleGuiButton.MouseButton1Click:Connect(function()
+    button.Visible = not button.Visible
+    toggleGuiButton.Text = button.Visible and "X" or "O"
+    toggleGuiButton.BackgroundColor3 = button.Visible and Color3.fromRGB(150, 0, 0) or Color3.fromRGB(0, 150, 0)
+end)
+
+-- FUNÇÃO DE ARRASTAR GENÉRICA
+local function makeDraggable(obj)
+    local dragging = false
+    local dragStart
+    local startPos
+    
+    obj.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = true
+            dragStart = input.Position
+            startPos = obj.Position
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then dragging = false end
+            end)
+        end
+    end)
+    
+    obj.InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+            if dragging then
+                local delta = input.Position - dragStart
+                obj.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+            end
+        end
+    end)
+end
+
+-- Aplicando arraste aos dois botões
+makeDraggable(button)
+makeDraggable(toggleGuiButton)
+
+-- CONFIG
+local CONFIG = {
+    BehindOffset = 6.5,
+    FireDelay = 0.31,
+    WarpDelay = 0.1,
+}
+
+-- UTILS
+local function getHRP()
+    local char = LocalPlayer.Character
+    return char and char:FindFirstChild("HumanoidRootPart")
+end
+
+local function isAliveModel(model, exceptChar)
+    if model == exceptChar then return false end
+    local root = model:FindFirstChild("HumanoidRootPart")
+    local humanoid = model:FindFirstChild("Humanoid")
+    return root and humanoid and humanoid.Health > 0
+end
+
+-- REMOTE
+local function getDivergentFistRemote()
+    local ok, remote = pcall(function()
+        return ReplicatedStorage
+            :WaitForChild("Knit",5)
+            :WaitForChild("Knit",5)
+            :WaitForChild("Services",5)
+            :WaitForChild("DivergentFistService",5)
+            :WaitForChild("RE",5)
+            :WaitForChild("Activated",5)
+    end)
+    return ok and remote or nil
+end
+
+local targetRemote = getDivergentFistRemote()
+
+if not targetRemote then
+    warn("Remote not found")
+    return
+end
+
+-- TARGET FINDER
+local function findNearestTarget()
+    local hrp = getHRP()
+    if not hrp then return nil end
+
+    local myChar = LocalPlayer.Character
+    local nearest = nil
+    local bestDist = math.huge
+
+    local function checkModel(model)
+        if not isAliveModel(model,myChar) then return end
+
+        local root = model:FindFirstChild("HumanoidRootPart")
+        local dist = (hrp.Position - root.Position).Magnitude
+
+        if dist < bestDist then
+            bestDist = dist
+            nearest = model
+        end
+    end
+
+    for _,player in ipairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer and player.Character then
+            checkModel(player.Character)
+        end
+    end
+
+    for _,obj in ipairs(workspace:GetDescendants()) do
+        if obj:IsA("Model") then
+            checkModel(obj)
+        end
+    end
+
+    return nearest
+end
+
+-- 🔥 DASH CURVADO PERFEITO (NÃO ENCURTA)
+local function curvedDashBehind(targetRoot, duration, customOffset)
+
+    local char = LocalPlayer.Character
+    if not char then return end
+
+    local hrp = char:FindFirstChild("HumanoidRootPart")
+    local hum = char:FindFirstChildOfClass("Humanoid")
+
+    if not hrp or not hum or not targetRoot then return end
+
+    hum.AutoRotate = false
+
+    local startTime = tick()
+    local startPos = hrp.Position 
+
+    -- ADICIONADO: Permite usar uma distância customizada (ex: tween curto)
+    local offsetDistance = customOffset or CONFIG.BehindOffset
+
+    local conn
+    conn = RunService.RenderStepped:Connect(function()
+        if not targetRoot or not targetRoot.Parent then
+            hum.AutoRotate = true
+            conn:Disconnect()
+            return
+        end
+
+        local elapsed = tick() - startTime
+        local alpha = math.clamp(elapsed / duration, 0, 1)
+
+        if alpha >= 1 then
+            hum.AutoRotate = true
+            conn:Disconnect()
+            return
+        end
+
+        local smoothAlpha = 1 - (1 - alpha)^3
+        local enemyCF = targetRoot.CFrame
+        local enemyPos = enemyCF.Position
+        
+        -- Aplica a distância definida (curta ou normal) nas costas do inimigo
+        local behindPos = enemyPos - (enemyCF.LookVector * offsetDistance)
+        local basePos = startPos:Lerp(behindPos, smoothAlpha)
+        local curve = enemyCF.RightVector * math.sin(smoothAlpha * math.pi) * offsetDistance
+        local finalPos = basePos + curve
+
+        hrp.CFrame = CFrame.lookAt(finalPos, enemyPos)
+    end)
+end
+
+-- HOOK
+local isCooling = false
+
+local oldNamecall
+oldNamecall = hookmetamethod(game,"__namecall",function(self,...)
+
+    if getnamecallmethod() ~= "FireServer" or self ~= targetRemote then
+        return oldNamecall(self,...)
+    end
+
+    if not Enabled then 
+        return oldNamecall(self,...)
+    end
+
+    if isCooling then
+        return oldNamecall(self,...)
+    end
+
+    isCooling = true
+
+    local args = {...}
+    local result = oldNamecall(self,...)
+
+    task.delay(CONFIG.FireDelay,function()
+        pcall(function()
+            targetRemote:FireServer(table.unpack(args))
+        end)
+        isCooling = false
+    end)
+
+    task.delay(CONFIG.WarpDelay,function()
+        local target = findNearestTarget()
+        if not target then return end
+        local targetRoot = target:FindFirstChild("HumanoidRootPart")
+        if not targetRoot then return end
+
+        local myHrp = getHRP()
+        local chosenOffset = CONFIG.BehindOffset -- Distância padrão
+
+        if myHrp then
+            local enemyLook = targetRoot.CFrame.LookVector
+            local myLook = myHrp.CFrame.LookVector
+            local dotProduct = enemyLook:Dot(myLook)
+            
+            -- Se o inimigo já estiver de costas (olhando na mesma direção que você)
+            if dotProduct > 0.5 then 
+                return 
+            end
+
+            -- ADICIONADO: Se o inimigo estiver de lado para você (ângulo perpendicular entre -0.5 e 0.5)
+            if math.abs(dotProduct) <= 0.5 then
+                chosenOffset = CONFIG.BehindOffset * 0.5 -- Faz o tween ser mais curto pras costas dele
+            end
+        end
+
+        curvedDashBehind(targetRoot, CONFIG.FireDelay, chosenOffset)
+    end)
+
+    return result
+end)
+
+getfenv().Enabled = false 
+button.MouseButton1Click:Connect(function()
+    Enabled = not Enabled
+    button.Text = Enabled and "BlackFlash : ON" or "BlackFlash : OFF"
+end)
+
+print("Black Flash GUI Loaded")
