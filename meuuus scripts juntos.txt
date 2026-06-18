@@ -548,30 +548,6 @@ local KokusenToggle = JujutsuTab:CreateToggle({
    end,
 })
 
-local TargetDropdown = JujutsuTab:CreateDropdown({
-   Name = "Alvo do Yuta Kill",
-   Options = getJujutsuPlayers(),
-   CurrentOption = "",
-   MultipleOptions = false,
-   Callback = function(Option)
-      selectedTargetName = Option[1] -- Vinculado à variável global restaurada
-   end,
-})
-
-JujutsuTab:CreateButton({
-   Name = "Atualizar Jogadores",
-   Callback = function()
-      TargetDropdown:Refresh(getJujutsuPlayers(), true)
-   end,
-})
-
-JujutsuTab:CreateButton({
-   Name = "Yuta Kill Blackflash",
-   Callback = function()
-      doYutaKillBlackflash()
-   end,
-})
-
 SquidTab:CreateButton({
    Name = "Get All Codes (Fast)",
    Callback = function()
