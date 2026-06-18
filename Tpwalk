@@ -1,0 +1,82 @@
+local Rayfield = loadstring(game:HttpGet('https://raw.githubusercontent.com/SiriusSoftwareLtd/Rayfield/main/source.lua'))()
+
+local Window = Rayfield:CreateWindow({
+   Name = "TP Walk Script",
+   LoadingTitle = "Carregando...",
+   LoadingSubtitle = "por AI",
+   ConfigurationSaving = {
+      Enabled = false
+   }
+})
+
+local Tab = Window:CreateTab("Principal", 4483362458)
+
+-- Variáveis de controle do TPWalk
+local tpwalking = false
+local loopRunning = false
+local tpSpeed = 1
+local hb = game:GetService("RunService").Heartbeat
+local players = game:GetService("Players")
+local speaker = players.LocalPlayer
+
+-- Declaração antecipada do Toggle para podermos atualizá-lo via script
+local TpToggle
+
+-- Função que roda o TPWalk em segundo plano
+local function startTpWalk()
+    if loopRunning then return end
+    loopRunning = true
+    
+    task.spawn(function()
+        while tpwalking do
+            local delta = hb:Wait()
+            local chr = speaker.Character
+            local hum = chr and chr:FindFirstChildWhichIsA("Humanoid")
+            
+            if chr and hum and hum.Parent then
+                if hum.MoveDirection.Magnitude > 0 then
+                    chr:TranslateBy(hum.MoveDirection * tpSpeed * delta * 10)
+                end
+            else
+                -- Se o personagem sumir, desliga tudo
+                tpwalking = false
+                if TpToggle then TpToggle:Set(false) end
+            end
+        end
+        loopRunning = false
+    end)
+end
+
+-- 1. Input para definir a velocidade ou desligar via "nil"
+local Input = Tab:CreateInput({
+   Name = "Velocidade do TPWalk",
+   PlaceholderText = "Digite um número ou 'nil' para desligar",
+   RemoveTextAfterFocusLost = false,
+   Callback = function(Text)
+      if Text == "nil" or Text == "Nil" then
+          tpwalking = false
+          if TpToggle then TpToggle:Set(false) end -- Desliga o Toggle visualmente
+      else
+          local num = tonumber(Text)
+          if num then
+              tpSpeed = num
+              tpwalking = true
+              if TpToggle then TpToggle:Set(true) end -- Ativa o Toggle visualmente
+              startTpWalk()
+          end
+      end
+   end,
+})
+
+-- 2. Toggle para ligar/desligar diretamente
+TpToggle = Tab:CreateToggle({
+   Name = "Ativar/Desativar TPWalk",
+   CurrentValue = false,
+   Flag = "TpWalkToggle", 
+   Callback = function(Value)
+      tpwalking = Value
+      if Value then
+          startTpWalk()
+      end
+   end,
+})
