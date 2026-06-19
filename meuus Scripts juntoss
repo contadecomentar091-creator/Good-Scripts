@@ -31,11 +31,7 @@ local LETHAL_DASH_DELAY = 0.22
 local isLethalEnabled = false
 local lethalAnimationConnection = nil
 
-local autoKokusenEnabled = false
-local isCooling = false
-local KOKUSEN_CONFIG = { BehindOffset = 6.5, FireDelay = 0.31, WarpDelay = 0.1 }
-
--- Lista de codigos do Squid Game X atualizada
+-- Lista de códigos do Squid Game X
 local squidCodes = {
     "$500K$","$1M$","$100K$","$250K$","$750K$",
     "FRONTMAN","REVAMP","150KLIKES","PENTA","MINGLE",
@@ -258,124 +254,6 @@ local function onAnimationPlayed(animationTrack)
 		end)
 		task.delay(0.8, function() playVisualSequence(4.6) end)
 	end
-end
-
-local function getJujutsuPlayers()
-    local p = {}
-    for _, v in pairs(Players:GetPlayers()) do
-        if v ~= localPlayer then 
-            table.insert(p, v.Name) 
-        end
-    end
-    return p
-end
-
-local function getJujutsuHRP()
-    local char = localPlayer.Character
-    return char and char:FindFirstChild("HumanoidRootPart")
-end
-
-local function isAliveModel(model, exceptChar)
-    if model == exceptChar then return false end
-    local root = model:FindFirstChild("HumanoidRootPart")
-    local humanoidObj = model:FindFirstChild("Humanoid")
-    return root and humanoidObj and humanoidObj.Health > 0
-end
-
-local function findNearestKokusenTarget()
-    local hrp = getJujutsuHRP()
-    if not hrp then return nil end
-    local myChar = localPlayer.Character
-    local nearest = nil
-    local bestDist = math.huge
-    local function checkModel(model)
-        if not isAliveModel(model, myChar) then return end
-        local root = model:FindFirstChild("HumanoidRootPart")
-        local dist = (hrp.Position - root.Position).Magnitude
-        if dist < bestDist then
-            bestDist = dist
-            nearest = model
-        end
-    end
-    for _, player in ipairs(Players:GetPlayers()) do
-        if player ~= localPlayer and player.Character then checkModel(player.Character) end
-    end
-    for _, obj in ipairs(workspace:GetDescendants()) do
-        if obj:IsA("Model") then checkModel(obj) end
-    end
-    return nearest
-end
-
-local function curvedDashBehind(targetRoot, duration, customOffset)
-    local char = localPlayer.Character
-    if not char then return end
-    local hrp = char:FindFirstChild("HumanoidRootPart")
-    local hum = char:FindFirstChildOfClass("Humanoid")
-    if not hrp or not hum or not targetRoot then return end
-    hum.AutoRotate = false
-    local startTime = tick()
-    local startPos = hrp.Position
-    local offsetDistance = customOffset or KOKUSEN_CONFIG.BehindOffset
-    local conn
-    conn = RunService.RenderStepped:Connect(function()
-        if not targetRoot or not targetRoot.Parent then
-            hum.AutoRotate = true
-            conn:Disconnect()
-            return
-        end
-        local elapsed = tick() - startTime
-        local alpha = math.clamp(elapsed / duration, 0, 1)
-        if alpha >= 1 then
-            hum.AutoRotate = true
-            conn:Disconnect()
-            return
-        end
-        local smoothAlpha = 1 - (1 - alpha)^3
-        local enemyCF = targetRoot.CFrame
-        local enemyPos = enemyCF.Position
-        local behindPos = enemyPos - (enemyCF.LookVector * offsetDistance)
-        local basePos = startPos:Lerp(behindPos, smoothAlpha)
-        local curve = enemyCF.RightVector * math.sin(smoothAlpha * math.pi) * offsetDistance
-        local finalPos = basePos + curve
-        hrp.CFrame = CFrame.lookAt(finalPos, enemyPos)
-    end)
-end
-
-local targetRemote
-pcall(function()
-    targetRemote = ReplicatedStorage:WaitForChild("Knit",5):WaitForChild("Knit",5):WaitForChild("Services",5):WaitForChild("DivergentFistService",5):WaitForChild("RE",5):WaitForChild("Activated",5)
-end)
-
-if targetRemote then
-    local oldNamecall
-    oldNamecall = hookmetamethod(game, "__namecall", function(self, ...)
-        if getnamecallmethod() ~= "FireServer" or self ~= targetRemote then return oldNamecall(self, ...) end
-        if not autoKokusenEnabled or isCooling then return oldNamecall(self, ...) end
-        isCooling = true
-        local args = {...}
-        local result = oldNamecall(self, ...)
-        task.delay(KOKUSEN_CONFIG.FireDelay, function()
-            pcall(function() targetRemote:FireServer(table.unpack(args)) end)
-            isCooling = false
-        end)
-        task.delay(KOKUSEN_CONFIG.WarpDelay, function()
-            local target = findNearestKokusenTarget()
-            if not target then return end
-            local targetRoot = target:FindFirstChild("HumanoidRootPart")
-            if not targetRoot then return end
-            local myHrp = getJujutsuHRP()
-            local chosenOffset = KOKUSEN_CONFIG.BehindOffset
-            if myHrp then
-                local enemyLook = targetRoot.CFrame.LookVector
-                local myLook = myHrp.CFrame.LookVector
-                local dotProduct = enemyLook:Dot(myLook)
-                if dotProduct > 0.5 then return end
-                if math.abs(dotProduct) <= 0.5 then chosenOffset = KOKUSEN_CONFIG.BehindOffset * 0.5 end
-            end
-            curvedDashBehind(targetRoot, KOKUSEN_CONFIG.FireDelay, chosenOffset)
-        end)
-        return result
-    end)
 end
 
 local function initializeCharacterTracking()
