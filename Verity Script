@@ -1,0 +1,152 @@
+local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
+
+local Window = WindUI:CreateWindow({
+    Title = "Mano Hub",
+    Icon = "rbxassetid://81836294907110",
+    Author = "Sae",
+    Folder = "ManoHub",
+    Size = UDim2.fromOffset(550, 300),
+    Transparent = true,
+    Theme = "Dark",
+    SideBarWidth = 190,
+    HasOutline = false,
+    HideSearchBar = true,
+    ScrollBarEnabled = false,
+    User = {
+        Enabled = true,
+        Anonymous = false
+    },
+})
+
+Window:EditOpenButton({
+    Title = "Mano Hub - Open",
+    Icon = "monitor",
+    CornerRadius = UDim.new(0, 6),
+    StrokeThickness = 2,
+    Color = ColorSequence.new(Color3.fromRGB(30, 30, 30), Color3.fromRGB(255, 255, 255)),
+    Draggable = true
+})
+
+local Tab = Window:Tab({
+    Title = "Main",
+    Icon = "home",
+    Locked = false,
+})
+
+-- ==========================================================
+-- 🌲 TOGGLE 1: AUTO CHOP TREE (Escaneia duas pastas)
+-- ==========================================================
+getgenv().AutoChop = false
+
+local ToggleTree = Tab:Toggle({
+    Title = "Auto Chop Tree",
+    Desc = "Quebra automaticamente as árvores próximas",
+    Icon = "bird",
+    Type = "Checkbox",
+    Value = false,
+    Callback = function(state) 
+        getgenv().AutoChop = state
+        
+        if state then
+            task.spawn(function()
+                local ReplicatedStorage = game:GetService("ReplicatedStorage")
+                local ChopTreeEvent = ReplicatedStorage:FindFirstChild("ChopTree")
+                
+                if not ChopTreeEvent then 
+                    warn("Remote Event 'ChopTree' não encontrado!")
+                    return 
+                end
+
+                while getgenv().AutoChop do
+                    local targetTrees = {}
+
+                    -- 1. Escaneia a primeira pasta (workspace.Trees)
+                    local treesFolder1 = workspace:FindFirstChild("Trees")
+                    if treesFolder1 then
+                        for _, tree in ipairs(treesFolder1:GetChildren()) do
+                            if tree.Name == "Tree" or tree:IsA("Model") then
+                                table.insert(targetTrees, tree)
+                            end
+                        end
+                    end
+
+                    -- 2. Escaneia a segunda pasta (workspace.Part2) apenas para itens com "Tree" no nome
+                    local part2Folder = workspace:FindFirstChild("Part2")
+                    if part2Folder then
+                        for _, item in ipairs(part2Folder:GetChildren()) do
+                            -- string.find verifica se o nome do item contém "Tree" (ex: "Tree", "PineTree", "OakTree")
+                            if string.find(item.Name, "Tree") then
+                                table.insert(targetTrees, item)
+                            end
+                        end
+                    end
+
+                    -- 3. Executa o ataque em todas as árvores encontradas
+                    for _, tree in ipairs(targetTrees) do
+                        if not getgenv().AutoChop then break end
+                        
+                        pcall(function()
+                            ChopTreeEvent:FireServer(tree, tree:GetDebugId())
+                        end)
+                        
+                        task.wait(0.1) -- Intervalo de ataque por árvore
+                    end
+                    
+                    task.wait(0.5) -- Intervalo para buscar novas árvores nas duas pastas
+                end
+            end)
+        end
+    end
+})
+
+-- ==========================================================
+-- 🪨 TOGGLE 2: AUTO BREAK STONE
+-- ==========================================================
+getgenv().AutoBreakStone = false
+
+local ToggleStone = Tab:Toggle({
+    Title = "Auto Break Stone",
+    Desc = "Quebra automaticamente as pedras próximas",
+    Icon = "bird",
+    Type = "Checkbox",
+    Value = false,
+    Callback = function(state) 
+        getgenv().AutoBreakStone = state
+        
+        if state then
+            task.spawn(function()
+                local ReplicatedStorage = game:GetService("ReplicatedStorage")
+                local MineRockEvent = ReplicatedStorage:FindFirstChild("MineRock")
+                
+                if not MineRockEvent then 
+                    warn("Remote Event 'MineRock' não encontrado!")
+                    return 
+                end
+
+                while getgenv().AutoBreakStone do
+                    local part2 = workspace:FindFirstChild("Part2")
+                    local rocksFolder = part2 and part2:FindFirstChild("Rocks")
+                    
+                    if rocksFolder then
+                        local rocks = rocksFolder:GetChildren()
+                        
+                        for _, rock in ipairs(rocks) do
+                            if not getgenv().AutoBreakStone then break end
+                            
+                            if rock.Name == "Rock" or rock:IsA("Model") then
+                                pcall(function()
+                                    MineRockEvent:FireServer(rock, rock:GetDebugId())
+                                end)
+                                task.wait(0.1) 
+                            end
+                        end
+                    else
+                        warn("Pasta 'Part2.Rocks' não encontrada no Workspace!")
+                    end
+                    
+                    task.wait(0.5)
+                end
+            end)
+        end
+    end
+})
