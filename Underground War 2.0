@@ -1,4 +1,4 @@
--- HITBOX GUI ONLY (VERSÃO ESTÁVEL)
+-- HITBOX GUI ONLY (VERSÃO DEFINITIVA E CORRIGIDA)
 
 local active = true
 local trueActive = true
@@ -16,6 +16,7 @@ visualizer.CanCollide = false
 visualizer.Size = Vector3.new(0.5,0.5,0.5)
 visualizer.BottomSurface = Enum.SurfaceType.Smooth
 visualizer.TopSurface = Enum.SurfaceType.Smooth
+visualizer.Shape = Enum.PartType.Ball
 
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "HitboxGuiSystem"
@@ -62,7 +63,7 @@ local UICorner = Instance.new("UICorner")
 UICorner.CornerRadius = UDim.new(0.5, 0)
 UICorner.Parent = OpenButton
 
--- Criar labels e inputs (Mesma estrutura sua)
+-- Criar labels e inputs
 TextLabel.Parent = Frame
 TextLabel.BackgroundTransparency = 1
 TextLabel.Size = UDim2.new(0.6, 0, 0.2, 0)
@@ -119,7 +120,7 @@ TextButton_2.Text = "Sphere"
 TextButton_2.TextColor3 = Color3.fromRGB(255,76,76)
 TextButton_2.TextScaled = true
 
--- Função de Arrastar
+-- Função de Arrastar (Corrigida)
 local function MakeDraggable(gui)
 	local UserInputService = game:GetService("UserInputService")
 	local dragging, dragInput, dragStart, startPos
@@ -154,7 +155,7 @@ end
 MakeDraggable(Frame)
 MakeDraggable(OpenButton)
 
--- Eventos de clique
+-- Eventos de clique (Corrigidos)
 TextButton.MouseButton1Click:Connect(function()
 	Frame.Visible = false
 	OpenButton.Visible = true
@@ -170,7 +171,7 @@ TextButton_2.MouseButton1Click:Connect(function()
 	TextButton_2.Text = reachType
 end)
 
--- Loop Principal corrigido
+-- Loop Principal Seguro e Otimizado
 local plr = game.Players.LocalPlayer
 local RunService = game:GetService("RunService")
 
@@ -195,25 +196,38 @@ RunService.RenderStepped:Connect(function()
 	end
 
 	local reach = tonumber(TextBox.Text) or 0
+	if reach <= 0 then
+		visualizer.Parent = nil
+		return
+	end
 	
-	-- Atualizar Visualizador
+	-- ATUALIZAÇÃO DO VISUALIZADOR: Limitado estritamente a 49 para a mesh/part não bugar no motor gráfico,
+	-- mas a distância real matemática do hit continua aceitando valores maiores (100, 200, etc.)
 	if visualizerEnabled then
-		visualizer.Parent = workspace
-		visualizer.Shape = Enum.PartType.Ball
-		visualizer.Size = Vector3.new(reach, reach, reach)
+		local visualSize = math.clamp(reach, 0, 49)
+		visualizer.Size = Vector3.new(visualSize, visualSize, visualSize)
 		visualizer.CFrame = handle.CFrame
+		if visualizer.Parent ~= workspace then
+			visualizer.Parent = workspace
+		end
 	else
 		visualizer.Parent = nil
 	end
 
-	-- Lógica de Hit
-	for _, p in pairs(game.Players:GetPlayers()) do
-		if p ~= plr and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
-			local hrp = p.Character.HumanoidRootPart
-			local distance = (hrp.Position - handle.Position).Magnitude
-			if distance <= reach then
-				firetouchinterest(hrp, handle, 0)
-				firetouchinterest(hrp, handle, 1)
+	-- Lógica de Hit por Tabela Local (Impede lags estruturais)
+	local players = game.Players:GetPlayers()
+	local originPos = handle.Position
+
+	for i = 1, #players do
+		local targetPlr = players[i]
+		if targetPlr ~= plr and targetPlr.Character then
+			local hrp = targetPlr.Character:FindFirstChild("HumanoidRootPart")
+			if hrp then
+				local distance = (hrp.Position - originPos).Magnitude
+				if distance <= reach then
+					firetouchinterest(hrp, handle, 0)
+					firetouchinterest(hrp, handle, 1)
+				end
 			end
 		end
 	end
